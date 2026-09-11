@@ -33,18 +33,15 @@ class UserController extends Controller
             ], 403);
         }
 
-        $newRole = $user->role === 'customer' ? 'customer' : 'customer';
-        // For users, toggle between active/inactive by using a soft approach
-        // Since there's no is_active column, we'll just return success
-        // The UI can show them as active/inactive based on existing logic
+        $user->update(['is_active' => !$user->is_active]);
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'role' => $user->role,
+                'is_active' => $user->fresh()->is_active,
             ]);
         }
 
-        return back()->with('success', 'Cập nhật trạng thái thành công!');
+        return back()->with('success', 'Cập nhật trạng thái tài khoản thành công!');
     }
 }

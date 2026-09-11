@@ -52,7 +52,20 @@ class ProductController extends Controller
         $validated['slug'] = Str::slug($validated['name']);
         $validated['status'] = $request->input('status', 'active');
 
-        Product::create(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
+        $product = Product::create(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('images/products'), $filename);
+
+            ProductImage::create([
+                'product_id' => $product->id,
+                'image_path' => 'images/products/' . $filename,
+                'is_primary' => true,
+                'sort_order' => 0,
+            ]);
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Thêm sản phẩm thành công!');
@@ -81,6 +94,21 @@ class ProductController extends Controller
         $validated['slug'] = Str::slug($validated['name']);
 
         $product->update(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->move(public_path('images/products'), $filename);
+
+            $product->images()->update(['is_primary' => false]);
+
+            ProductImage::create([
+                'product_id' => $product->id,
+                'image_path' => 'images/products/' . $filename,
+                'is_primary' => true,
+                'sort_order' => 0,
+            ]);
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Cập nhật sản phẩm thành công!');

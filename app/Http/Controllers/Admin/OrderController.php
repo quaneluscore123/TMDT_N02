@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\OrderStatusChangedMail;
 use App\Models\Order;
 use App\Services\Referral\ReferralService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
@@ -45,12 +47,20 @@ class OrderController extends Controller
             'status' => 'required|in:pending,confirmed,shipping,delivered,cancelled',
         ]);
 
+        $oldStatus = $order->status;
         $order->update(['status' => $validated['status']]);
 
         if ($validated['status'] === 'delivered') {
             $this->referralService->completeReferral($order);
         } elseif ($validated['status'] === 'cancelled') {
             $this->referralService->cancelReferral($order);
+        }
+
+        // Gửi email thông báo thay đổi trạng thái
+        try {
+            Mail::to($order->user->email)->send(new OrderStatusChangedMail($order, $oldStatus));
+        } catch (\Exception $e) {
+            \Log::error('Không thể gửi email cập nhật đơn hàng: ' . $e->getMessage());
         }
 
         if ($request->wantsJson()) {

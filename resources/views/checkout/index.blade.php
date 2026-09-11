@@ -2,7 +2,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Thanh toán</h1>
 
-        <form action="{{ route('checkout.store') }}" method="POST">
+        <form action="{{ route('checkout.store') }}" method="POST" x-data="checkoutForm()">
             @csrf
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -95,18 +95,61 @@
                             @endforeach
                         </div>
 
+                        {{-- Coupon Input --}}
+                        <div class="border-t pt-4 mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Mã giảm giá</label>
+
+                            {{-- View khi chưa có coupon --}}
+                            <div x-show="!appliedCoupon" class="flex gap-2">
+                                <input type="text" x-model="couponCode" placeholder="Nhập mã giảm giá"
+                                       class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-[#b8847e] focus:border-[#b8847e]"
+                                       :disabled="loading">
+                                <button type="button" @click="applyCoupon()"
+                                        :disabled="loading || !couponCode.trim()"
+                                        class="px-4 py-2 bg-[#b8847e] text-white text-sm rounded-lg hover:bg-[#a6736d] transition disabled:opacity-50">
+                                    <span x-show="!loading">Áp dụng</span>
+                                    <span x-show="loading" x-cloak>...</span>
+                                </button>
+                            </div>
+
+                            {{-- View khi đã có coupon --}}
+                            <div x-show="appliedCoupon" x-cloak class="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span class="text-sm font-medium text-green-800" x-text="appliedCoupon"></span>
+                                </div>
+                                <button type="button" @click="removeCoupon()"
+                                        class="text-sm text-red-500 hover:text-red-700 underline">
+                                    Xóa
+                                </button>
+                            </div>
+
+                            {{-- Error message --}}
+                            <div x-show="couponError" x-cloak class="mt-2 text-sm text-red-600" x-text="couponError"></div>
+                        </div>
+
                         <div class="border-t pt-3 space-y-2">
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Tạm tính</span>
-                                <span>{{ number_format($cartTotal, 0, ',', '.') }} ₫</span>
+                                <span x-text="formatCurrency({{ $cartTotal }})"></span>
                             </div>
+
+                            {{-- Discount line --}}
+                            <div x-show="discount > 0" x-cloak class="flex justify-between text-sm">
+                                <span class="text-green-600">Giảm giá</span>
+                                <span class="text-green-600" x-text="'-' + formatCurrency(discount)"></span>
+                            </div>
+
                             <div class="flex justify-between text-sm">
                                 <span class="text-gray-600">Phí vận chuyển</span>
-                                <span class="text-green-600">Miễn phí</span>
+                                <span x-text="shippingFee > 0 ? formatCurrency(shippingFee) : 'Miễn phí'" :class="shippingFee === 0 ? 'text-green-600' : ''"></span>
                             </div>
+
                             <div class="flex justify-between text-lg font-bold border-t pt-2">
                                 <span>Tổng cộng</span>
-                                <span class="text-[#b8847e]">{{ number_format($cartTotal, 0, ',', '.') }} ₫</span>
+                                <span class="text-[#b8847e]" x-text="formatCurrency(finalTotal)"></span>
                             </div>
                         </div>
 
@@ -119,4 +162,93 @@
             </div>
         </form>
     </div>
+
+    @push('scripts')
+    <script>
+        function checkoutForm() {
+            return {
+                couponCode: '{{ $couponCode ?? '' }}',
+                appliedCoupon: '{{ $couponCode ?? '' }}',
+                discount: {{ $discount ?? 0 }},
+                loading: false,
+                couponError: '',
+
+                get cartTotal() {
+                    return {{ $cartTotal }};
+                },
+
+                get shippingFee() {
+                    return this.cartTotal >= 500000 ? 0 : 30000;
+                },
+
+                get finalTotal() {
+                    return Math.max(0, this.cartTotal - this.discount + this.shippingFee);
+                },
+
+                formatCurrency(amount) {
+                    return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+                },
+
+                async applyCoupon() {
+                    if (!this.couponCode.trim()) return;
+
+                    this.loading = true;
+                    this.couponError = '';
+
+                    try {
+                        const response = await fetch('{{ route("checkout.apply-coupon") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ code: this.couponCode.trim() }),
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.appliedCoupon = data.code;
+                            this.discount = data.discount;
+                            this.couponError = '';
+                        } else {
+                            this.couponError = data.message;
+                            this.appliedCoupon = '';
+                            this.discount = 0;
+                        }
+                    } catch (e) {
+                        this.couponError = 'Có lỗi xảy ra, vui lòng thử lại.';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                async removeCoupon() {
+                    this.loading = true;
+
+                    try {
+                        await fetch('{{ route("checkout.remove-coupon") }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        this.appliedCoupon = '';
+                        this.couponCode = '';
+                        this.discount = 0;
+                        this.couponError = '';
+                    } catch (e) {
+                        // ignore
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+            };
+        }
+    </script>
+    @endpush
 </x-layouts.app>

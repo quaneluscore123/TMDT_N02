@@ -2,20 +2,25 @@
 
 namespace App\Services\Order;
 
+use App\Exceptions\CouponException;
 use App\Exceptions\OrderException;
+use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\BaseService;
 use App\Services\Cart\CartService;
+use App\Services\Coupon\CouponService;
 use App\Services\Referral\ReferralService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class OrderService extends BaseService
 {
     public function __construct(
         private CartService $cartService,
+        private CouponService $couponService,
         private ReferralService $referralService
     ) {}
 
@@ -60,24 +65,40 @@ class OrderService extends BaseService
 
                 $itemsToCreate[] = [
                     'product_id'   => $product->id,
-                    'product_name' => $product->name,      // Snapshot tên (tránh thay đổi sau)
-                    'price'        => $product->effectivePrice(), // Snapshot giá thực tế từ DB
+                    'product_name' => $product->name,
+                    'price'        => $product->effectivePrice(),
                     'quantity'     => $cartItem->quantity,
                     'subtotal'     => $lineTotal,
                 ];
             }
 
-            // 3. Tính phí ship (freeship khi subtotal >= 500k)
+            // 3. Xử lý Coupon (nếu có trong session)
+            $discount  = 0;
+            $coupon    = null;
+            $couponCode = session('coupon_code');
+
+            if ($couponCode) {
+                try {
+                    $result = $this->couponService->validateAndCalculate($couponCode, $subtotal, $user);
+                    $coupon   = $result['coupon'];
+                    $discount = $result['discount'];
+                } catch (CouponException $e) {
+                    session()->forget('coupon_code');
+                    throw $e;
+                }
+            }
+
+            // 4. Tính phí ship (freeship khi subtotal >= 500k, không áp dụng cho discount)
             $freeShippingThreshold = 500000;
             $shippingFee = $subtotal >= $freeShippingThreshold ? 0 : 30000;
-            $total       = $subtotal + $shippingFee;
+            $total       = $subtotal - $discount + $shippingFee;
 
-            // 4. Tạo Order
+            // 5. Tạo Order
             $order = Order::create([
                 'user_id'          => $user->id,
                 'order_code'       => 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
                 'subtotal'         => $subtotal,
-                'discount'         => 0,
+                'discount'         => $discount,
                 'shipping_fee'     => $shippingFee,
                 'total'            => $total,
                 'status'           => 'pending',
@@ -89,20 +110,35 @@ class OrderService extends BaseService
                 'note'             => $data['note'] ?? null,
             ]);
 
-            // 5. Tạo OrderItems
+            // 6. Tạo OrderItems
             $order->items()->createMany($itemsToCreate);
 
-            // 6. Trừ tồn kho
+            // 7. Redeem Coupon (tăng used_count + tạo CouponUsage)
+            if ($coupon) {
+                $this->couponService->redeem($coupon, $user, $order);
+            }
+
+            // 8. Trừ tồn kho
             foreach ($itemsToCreate as $item) {
                 Product::where('id', $item['product_id'])
                     ->decrement('stock', $item['quantity']);
             }
 
-            // 7. Xóa giỏ hàng
+            // 9. Xóa giỏ hàng
             $this->cartService->clearCart($user->id);
 
-            // 8. Lưu vết Referral (nếu có)
+            // 10. Lưu vết Referral (nếu có)
             $this->referralService->attachOrderToReferral($order);
+
+            // 11. Xóa coupon khỏi session
+            session()->forget('coupon_code');
+
+            // 12. Gửi email xác nhận đơn hàng
+            try {
+                Mail::to($user->email)->send(new OrderConfirmedMail($order));
+            } catch (\Exception $e) {
+                \Log::error('Không thể gửi email xác nhận đơn hàng: ' . $e->getMessage());
+            }
 
             return $order;
         });

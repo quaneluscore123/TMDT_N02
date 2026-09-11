@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -83,6 +84,43 @@ class ProductController extends Controller
             }
         }
 
-        return view('products.show', compact('product', 'relatedProducts', 'reviews', 'canReview', 'hasReviewed'));
+        // SEO Meta Tags
+        $metaTitle = $product->name . ' - SocialShop';
+        $metaDescription = Str::limit(strip_tags($product->description ?? $product->name), 160);
+        $metaImage = $product->image_url ?? asset('images/og-image.jpg');
+
+        // JSON-LD Structured Data
+        $jsonLd = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $product->name,
+            'description' => $metaDescription,
+            'image' => $metaImage,
+            'sku' => $product->sku,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => $product->brand ?? 'SocialShop',
+            ],
+            'offers' => [
+                '@type' => 'Offer',
+                'price' => $product->effectivePrice() / 1000,
+                'priceCurrency' => 'VND',
+                'availability' => $product->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'seller' => [
+                    '@type' => 'Organization',
+                    'name' => 'SocialShop',
+                ],
+            ],
+            'aggregateRating' => $product->reviews_count > 0 ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => $product->average_rating,
+                'reviewCount' => $product->reviews_count,
+            ] : null,
+        ];
+
+        return view('products.show', compact(
+            'product', 'relatedProducts', 'reviews', 'canReview', 'hasReviewed',
+            'metaTitle', 'metaDescription', 'metaImage', 'jsonLd'
+        ));
     }
 }

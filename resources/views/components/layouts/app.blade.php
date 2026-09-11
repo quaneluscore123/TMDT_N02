@@ -4,7 +4,37 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ $title ?? config('app.name', 'SocialCommerce') }}</title>
+    
+    {{-- SEO Meta Tags --}}
+    <title>{{ $metaTitle ?? ($title ?? config('app.name', 'SocialShop')) }}</title>
+    <meta name="description" content="{{ $metaDescription ?? 'SocialShop - Thời trang và phong cách sống. Mua sắm online với nhiều ưu đãi hấp dẫn.' }}">
+    <meta name="keywords" content="{{ $metaKeywords ?? 'thời trang, fashion, mua sắm online, áo quần, phụ kiện' }}">
+    <meta name="author" content="SocialShop">
+    <meta name="robots" content="index, follow">
+    
+    {{-- Open Graph / Facebook --}}
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $metaTitle ?? ($title ?? 'SocialShop') }}">
+    <meta property="og:description" content="{{ $metaDescription ?? 'SocialShop - Thời trang và phong cách sống' }}">
+    <meta property="og:image" content="{{ $metaImage ?? asset('images/og-image.jpg') }}">
+    <meta property="og:site_name" content="SocialShop">
+    
+    {{-- Twitter --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $metaTitle ?? ($title ?? 'SocialShop') }}">
+    <meta name="twitter:description" content="{{ $metaDescription ?? 'SocialShop - Thời trang và phong cách sống' }}">
+    <meta name="twitter:image" content="{{ $metaImage ?? asset('images/og-image.jpg') }}">
+    
+    {{-- Canonical URL --}}
+    <link rel="canonical" href="{{ url()->current() }}">
+    
+    {{-- JSON-LD Structured Data --}}
+    @isset($jsonLd)
+        <script type="application/ld+json">
+            {!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+        </script>
+    @endisset
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">

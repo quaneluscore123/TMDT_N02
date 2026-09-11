@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\Product;
 
 class User extends Authenticatable
 {
@@ -16,9 +17,12 @@ class User extends Authenticatable
         'email',
         'password',
         'avatar',
+        'phone',
+        'address',
         'provider',
         'provider_id',
         'role',
+        'is_active',
         'referral_code',
     ];
 
@@ -56,7 +60,9 @@ class User extends Authenticatable
 
     public function wishlistedProducts()
     {
-        return $this->belongsToMany(Product::class, 'wishlist_items', 'wishlist_id', 'product_id')->withTimestamps();
+        return Product::whereHas('wishlistedBy', function ($q) {
+            $q->where('users.id', $this->id);
+        });
     }
 
     public function reviews()

@@ -128,5 +128,8 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+
+        // Coupons
+        $this->call(CouponSeeder::class);
     }
 }

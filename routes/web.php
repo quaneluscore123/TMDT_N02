@@ -9,6 +9,9 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\CompareController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
@@ -23,6 +26,9 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Sitemap
+Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+
 // Static Pages
 Route::get('/huong-dan-mua-hang', [StaticPageController::class, 'buyingGuide'])->name('pages.buying-guide');
 Route::get('/chinh-sach-doi-tra', [StaticPageController::class, 'returnPolicy'])->name('pages.return-policy');
@@ -32,6 +38,12 @@ Route::get('/faq', [StaticPageController::class, 'faq'])->name('pages.faq');
 // Products
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+
+// Compare
+Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
+Route::post('/compare/add/{product:id}', [CompareController::class, 'add'])->name('compare.add');
+Route::post('/compare/remove/{product:id}', [CompareController::class, 'remove'])->name('compare.remove');
+Route::post('/compare/clear', [CompareController::class, 'clear'])->name('compare.clear');
 
 // Payments (Public Webhook & Return URL)
 Route::get('/payment/vnpay/return', [\App\Http\Controllers\PaymentController::class, 'vnpayReturn'])->name('payment.vnpay.return');
@@ -69,6 +81,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout.index');
     Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
 
+    // Coupon
+    Route::post('/checkout/apply-coupon', [CouponController::class, 'apply'])->name('checkout.apply-coupon');
+    Route::post('/checkout/remove-coupon', [CouponController::class, 'remove'])->name('checkout.remove-coupon');
+
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -82,7 +98,7 @@ Route::middleware('auth')->group(function () {
 
     // Wishlist
     Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/{product}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::post('/wishlist/{product:id}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     // Reviews
     Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');

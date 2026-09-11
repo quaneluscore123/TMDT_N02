@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\CartException;
+use App\Models\Coupon;
 use App\Services\Cart\CartService;
 use Illuminate\Http\Request;
 
@@ -92,13 +93,30 @@ class CartController extends Controller
     {
         $cart = $this->cartService->getCartWithItems(auth()->id());
         $cartItems = $cart->items;
-        
+
         if ($cartItems->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng trống!');
         }
 
         $cartTotal = $cart->totalPrice();
 
-        return view('checkout.index', compact('cartItems', 'cartTotal'));
+        // Lấy coupon từ session (nếu có)
+        $couponCode = session('coupon_code');
+        $discount   = 0;
+        $coupon     = null;
+
+        if ($couponCode) {
+            $coupon = Coupon::where('code', $couponCode)->where('status', 'active')->first();
+            if ($coupon) {
+                $discount = $coupon->calculateDiscount($cartTotal);
+            } else {
+                session()->forget('coupon_code');
+                $couponCode = null;
+            }
+        }
+
+        $total = $cartTotal - $discount;
+
+        return view('checkout.index', compact('cartItems', 'cartTotal', 'couponCode', 'discount', 'total'));
     }
 }

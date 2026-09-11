@@ -42,7 +42,11 @@ class Product extends Model
 
     public function primaryImage()
     {
-        return $this->hasOne(ProductImage::class)->where('is_primary', true)->orWhere(fn($q) => $q->orderBy('sort_order'));
+        return $this->hasOne(ProductImage::class)
+            ->where('is_primary', true)
+            ->orWhere(function ($q) {
+                $q->where('is_primary', false)->orderBy('sort_order')->limit(1);
+            });
     }
 
     public function orderItems()
@@ -52,7 +56,9 @@ class Product extends Model
 
     public function wishlistedBy()
     {
-        return $this->belongsToMany(User::class, 'wishlist_items', 'product_id', 'user_id')->withTimestamps();
+        return User::whereHas('wishlist.items', function ($q) {
+            $q->where('product_id', $this->id);
+        });
     }
 
     public function reviews()
