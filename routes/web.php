@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\CouponController as AdminCouponController;
 
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -121,4 +122,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::patch('/users/{user}/toggle-status', [AdminUserController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    // Coupons (specific routes before wildcard)
+    Route::get('/coupons', [AdminCouponController::class, 'index'])->name('coupons.index');
+    Route::get('/coupons/create', [AdminCouponController::class, 'create'])->name('coupons.create');
+    Route::post('/coupons', [AdminCouponController::class, 'store'])->name('coupons.store');
+    Route::delete('/coupons/bulk-delete', [AdminCouponController::class, 'bulkDelete'])->name('coupons.bulk-delete');
+    Route::patch('/coupons/bulk-toggle', [AdminCouponController::class, 'bulkToggle'])->name('coupons.bulk-toggle');
+    Route::get('/coupons/{coupon}/edit', [AdminCouponController::class, 'edit'])->name('coupons.edit');
+    Route::put('/coupons/{coupon}', [AdminCouponController::class, 'update'])->name('coupons.update');
+    Route::delete('/coupons/{coupon}', [AdminCouponController::class, 'destroy'])->name('coupons.destroy');
+    Route::patch('/coupons/{coupon}/toggle', [AdminCouponController::class, 'toggleStatus'])->name('coupons.toggle');
+    Route::get('/coupons/{coupon}/usage', [AdminCouponController::class, 'usageHistory'])->name('coupons.usage');
 });

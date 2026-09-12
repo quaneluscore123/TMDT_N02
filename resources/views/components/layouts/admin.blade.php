@@ -83,6 +83,14 @@
                     Danh mục
                 </a>
 
+                <a href="{{ route('admin.coupons.index') }}"
+                   class="flex items-center px-4 py-3 {{ request()->routeIs('admin.coupons.*') ? 'bg-indigo-800' : 'hover:bg-indigo-600' }}">
+                    <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                    </svg>
+                    Mã giảm giá
+                </a>
+
                 <div class="border-t border-indigo-600 mt-4 pt-4">
                     <a href="{{ route('home') }}"
                        class="flex items-center px-4 py-3 hover:bg-indigo-600">
