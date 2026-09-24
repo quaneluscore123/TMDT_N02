@@ -171,4 +171,64 @@ class OrderTest extends TestCase
             'stock' => 2,
         ]);
     }
+
+    public function test_user_can_view_orders_index(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get('/orders')->assertOk()->assertViewIs('orders.index');
+    }
+
+    public function test_user_can_view_order_details(): void
+    {
+        $user = User::factory()->create();
+        $order = \App\Models\Order::factory()->create(['user_id' => $user->id]);
+        $this->actingAs($user)->get("/orders/{$order->id}")->assertOk()->assertViewIs('orders.show');
+    }
+
+    public function test_user_can_view_order_success_page(): void
+    {
+        $user = User::factory()->create();
+        $order = \App\Models\Order::factory()->create(['user_id' => $user->id]);
+        $this->actingAs($user)->get("/orders/{$order->id}/success")->assertOk()->assertViewIs('orders.success');
+    }
+
+    public function test_show_review_redirects_if_cart_empty_after_session(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->withSession(['checkout' => ['payment_method' => 'cod']])->get('/checkout/review')->assertRedirect(route('cart.index'));
+    }
+
+    public function test_show_review_clears_coupon_if_invalid(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->createProduct();
+        $this->fillCart($user, $product, 1, 100000);
+        $this->actingAs($user)
+             ->withSession([
+                 'checkout' => [
+                     'payment_method' => 'cod',
+                     'shipping_name' => 'Name',
+                     'shipping_phone' => 'Phone',
+                     'shipping_address' => 'Address'
+                 ], 
+                 'coupon_code' => 'INVALID'
+             ])
+             ->get('/checkout/review')
+             ->assertOk();
+             
+        $this->assertNull(session('coupon_code'));
+    }
+
+    public function test_place_order_with_vnpay_redirects_to_vnpay(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->createProduct(['stock' => 5, 'price' => 200000]);
+        $this->fillCart($user, $product, 1, 200000);
+
+        $this->postReview($user, ['payment_method' => 'vnpay'])->assertRedirect();
+        
+        $response = $this->postConfirm($user);
+        $response->assertRedirect();
+        $this->assertStringContainsString('vnpay', $response->headers->get('Location'));
+    }
 }

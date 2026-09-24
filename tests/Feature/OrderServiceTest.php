@@ -153,7 +153,7 @@ class OrderServiceTest extends TestCase
     {
         Mail::fake();
         $user = User::factory()->create();
-        $product = Product::factory()->create(['status' => 'active', 'stock' => 10, 'price' => 600000]);
+        $product = Product::factory()->create(['status' => 'active', 'stock' => 10, 'price' => 600000, 'sale_price' => null]);
 
         $cart = Cart::create(['user_id' => $user->id]);
         CartItem::create([

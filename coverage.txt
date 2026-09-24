@@ -1,0 +1,144 @@
+
+
+Code Coverage Report:
+  2026-09-24 21:47:27
+
+ Summary:
+  Classes: 59.70% (40/67)
+  Methods: 78.01% (220/282)
+  Lines:   86.14% (2020/2345)
+
+App\Console\Commands\BackupDatabase
+  Methods:   0.00% ( 0/ 2)   Lines:  65.00% ( 39/ 60)
+App\Http\Controllers\Admin\AuditLogController
+  Methods:   0.00% ( 0/ 1)   Lines:  50.00% (  6/ 12)
+App\Http\Controllers\Admin\CategoryController
+  Methods:  20.00% ( 1/ 5)   Lines:  81.13% ( 43/ 53)
+App\Http\Controllers\Admin\ChatbotFaqController
+  Methods:  71.43% ( 5/ 7)   Lines:  90.00% ( 45/ 50)
+App\Http\Controllers\Admin\CouponController
+  Methods:  20.00% ( 2/10)   Lines:  79.78% ( 71/ 89)
+App\Http\Controllers\Admin\DashboardController
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% ( 58/ 58)
+App\Http\Controllers\Admin\OrderController
+  Methods:  40.00% ( 2/ 5)   Lines:  68.00% ( 34/ 50)
+App\Http\Controllers\Admin\ProductController
+  Methods:   0.00% ( 0/10)   Lines:  32.43% ( 48/148)
+App\Http\Controllers\Admin\ReviewController
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% ( 19/ 19)
+App\Http\Controllers\Admin\UserController
+  Methods:  60.00% ( 3/ 5)   Lines:  85.19% ( 46/ 54)
+App\Http\Controllers\Auth\ForgotPasswordController
+  Methods:  60.00% ( 3/ 5)   Lines:  90.91% ( 20/ 22)
+App\Http\Controllers\Auth\GoogleController
+  Methods:  66.67% ( 2/ 3)   Lines:   8.70% (  2/ 23)
+App\Http\Controllers\Auth\LoginController
+  Methods:  66.67% ( 2/ 3)   Lines:  91.30% ( 21/ 23)
+App\Http\Controllers\Auth\LogoutController
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% (  4/  4)
+App\Http\Controllers\Auth\RegisterController
+  Methods:  66.67% ( 2/ 3)   Lines:  84.62% ( 11/ 13)
+App\Http\Controllers\CartController
+  Methods:  71.43% ( 5/ 7)   Lines:  92.63% ( 88/ 95)
+App\Http\Controllers\ChatController
+  Methods:  33.33% ( 1/ 3)   Lines:  33.66% ( 34/101)
+App\Http\Controllers\CompareController
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% ( 35/ 35)
+App\Http\Controllers\CouponController
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% ( 30/ 30)
+App\Http\Controllers\HomeController
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% ( 15/ 15)
+App\Http\Controllers\OrderController
+  Methods:  87.50% ( 7/ 8)   Lines:  95.71% ( 67/ 70)
+App\Http\Controllers\PaymentController
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% ( 23/ 23)
+App\Http\Controllers\ProductController
+  Methods:  40.00% ( 2/ 5)   Lines:  90.12% (146/162)
+App\Http\Controllers\ProfileController
+  Methods:  75.00% ( 3/ 4)   Lines:  96.77% ( 30/ 31)
+App\Http\Controllers\ReviewController
+  Methods:   0.00% ( 0/ 1)   Lines:  90.91% ( 30/ 33)
+App\Http\Controllers\SitemapController
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% ( 10/ 10)
+App\Http\Controllers\StaticPageController
+  Methods: 100.00% ( 6/ 6)   Lines: 100.00% (  6/  6)
+App\Http\Controllers\WishlistController
+  Methods:  50.00% ( 1/ 2)   Lines:  96.30% ( 26/ 27)
+App\Http\Middleware\IsAdmin
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% (  3/  3)
+App\Http\Middleware\SecurityHeaders
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% ( 18/ 18)
+App\Http\Middleware\TrackReferral
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% (  8/  8)
+App\Http\Requests\Auth\ForgotPasswordRequest
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% (  8/  8)
+App\Http\Requests\Auth\LoginRequest
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% ( 11/ 11)
+App\Http\Requests\Auth\RegisterRequest
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% ( 16/ 16)
+App\Http\Requests\Cart\AddToCartRequest
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% ( 12/ 12)
+App\Http\Requests\Cart\UpdateCartRequest
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% (  9/  9)
+App\Livewire\ChatbotWidget
+  Methods: 100.00% ( 5/ 5)   Lines: 100.00% ( 22/ 22)
+App\Mail\OrderConfirmedMail
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  8/  8)
+App\Mail\OrderStatusChangedMail
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  8/  8)
+App\Models\AuditLog
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% (  5/  5)
+App\Models\Cart
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  6/  6)
+App\Models\CartItem
+  Methods: 100.00% ( 5/ 5)   Lines: 100.00% (  8/  8)
+App\Models\Category
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  4/  4)
+App\Models\ChatbotFaq
+  Methods: 100.00% ( 1/ 1)   Lines: 100.00% (  1/  1)
+App\Models\Coupon
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% ( 24/ 24)
+App\Models\CouponUsage
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  6/  6)
+App\Models\Order
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% (  8/  8)
+App\Models\OrderItem
+  Methods:  80.00% ( 4/ 5)   Lines:  90.00% (  9/ 10)
+App\Models\Payment
+  Methods:  66.67% ( 2/ 3)   Lines:  85.71% (  6/  7)
+App\Models\Product
+  Methods:  88.24% (15/17)   Lines:  93.10% ( 27/ 29)
+App\Models\ProductImage
+  Methods:  66.67% ( 2/ 3)   Lines:  87.50% (  7/  8)
+App\Models\ProductVariant
+  Methods: 100.00% ( 4/ 4)   Lines: 100.00% (  7/  7)
+App\Models\Referral
+  Methods:  50.00% ( 3/ 6)   Lines:  62.50% (  5/  8)
+App\Models\Review
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% (  2/  2)
+App\Models\User
+  Methods: 100.00% ( 6/ 6)   Lines: 100.00% ( 11/ 11)
+App\Models\Wishlist
+  Methods: 100.00% ( 3/ 3)   Lines: 100.00% (  3/  3)
+App\Models\WishlistItem
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% (  2/  2)
+App\Providers\AppServiceProvider
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% ( 29/ 29)
+App\Services\AuditService
+  Methods:   0.00% ( 0/ 1)   Lines:  92.31% ( 12/ 13)
+App\Services\Auth\AuthService
+  Methods: 100.00% ( 8/ 8)   Lines: 100.00% ( 69/ 69)
+App\Services\Cart\CartService
+  Methods:  76.47% (13/17)   Lines:  96.93% (158/163)
+App\Services\ChatbotService
+  Methods: 100.00% (10/10)   Lines: 100.00% (176/176)
+App\Services\Coupon\CouponService
+  Methods:  75.00% ( 3/ 4)   Lines:  95.45% ( 42/ 44)
+App\Services\Order\OrderService
+  Methods: 100.00% ( 5/ 5)   Lines: 100.00% (100/100)
+App\Services\Payment\PaymentService
+  Methods: 100.00% ( 5/ 5)   Lines: 100.00% ( 58/ 58)
+App\Services\Payment\VNPayService
+  Methods: 100.00% ( 2/ 2)   Lines: 100.00% ( 60/ 60)
+App\Services\Referral\ReferralService
+  Methods: 100.00% ( 5/ 5)   Lines: 100.00% ( 45/ 45)
