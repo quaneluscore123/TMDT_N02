@@ -123,4 +123,39 @@ class AdminOrderTest extends TestCase
             'status' => 'cancelled',
         ]);
     }
+
+    public function test_admin_can_update_order_status_json(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->patchJson("/admin/orders/{$order->id}/status", [
+                'status' => 'confirmed',
+            ])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'confirmed',
+        ]);
+    }
+
+    public function test_cannot_reopen_cancelled_order_json(): void
+    {
+        $user = User::factory()->create(['role' => 'customer']);
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'cancelled',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->patchJson("/admin/orders/{$order->id}/status", ['status' => 'pending'])
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
 }
