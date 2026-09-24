@@ -53,7 +53,7 @@ class ChatControllerTest extends TestCase
 
     public function test_stream_user_with_empty_api_key_uses_fallback()
     {
-        Config::set('services.gemini.api_key', '');
+        Config::set('services.gemini.key', '');
         
         $user = User::factory()->create();
         $this->actingAs($user);
@@ -66,14 +66,20 @@ class ChatControllerTest extends TestCase
 
     public function test_stream_user_gemini_api_error()
     {
-        Config::set('services.gemini.api_key', 'valid_api_key');
+        Config::set('services.gemini.key', 'valid_api_key');
         
         $user = User::factory()->create();
         $this->actingAs($user);
+        
+        \Illuminate\Support\Facades\Http::fake([
+            '*' => \Illuminate\Support\Facades\Http::response('', 500)
+        ]);
         
         $response = $this->postJson('/chat/stream', ['message' => 'hello']);
         $response->assertStatus(200);
         
         $this->getStreamContent($response);
     }
+
+
 }

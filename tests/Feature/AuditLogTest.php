@@ -228,4 +228,52 @@ class AuditLogTest extends TestCase
             ->get('/admin/audit-logs')
             ->assertForbidden();
     }
+
+    public function test_admin_can_filter_audit_logs_by_action(): void
+    {
+        $admin = $this->makeAdmin();
+
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => 'test_action_A',
+            'ip_address' => '127.0.0.1',
+        ]);
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => 'test_action_B',
+            'ip_address' => '127.0.0.2',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/admin/audit-logs?action=test_action_B')
+            ->assertOk();
+            
+        $response->assertViewHas('logs', function ($logs) {
+            return $logs->count() === 1 && $logs->first()->action === 'test_action_B';
+        });
+    }
+
+    public function test_admin_can_search_audit_logs(): void
+    {
+        $admin = $this->makeAdmin();
+
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => 'search_action_A',
+            'ip_address' => '192.168.1.1',
+        ]);
+        AuditLog::create([
+            'user_id' => $admin->id,
+            'action' => 'search_action_B',
+            'ip_address' => '10.0.0.1',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->get('/admin/audit-logs?search=192.168')
+            ->assertOk();
+            
+        $response->assertViewHas('logs', function ($logs) {
+            return $logs->count() === 1 && $logs->first()->action === 'search_action_A';
+        });
+    }
 }
