@@ -199,13 +199,14 @@
                             .then(data => {
                                 cartLoading = false;
                                 if (data.success) {
-                                    $store.cart.count = data.cartCount;
+                                    Alpine.store('cart').count = data.cartCount;
                                     window.dispatchEvent(new CustomEvent('toast', {
                                         detail: { message: 'Đã thêm vào giỏ hàng!', type: 'success' }
                                     }));
                                 }
                             })
-                            .catch(() => {
+                            .catch((err) => {
+                                console.error(err);
                                 cartLoading = false;
                                 window.dispatchEvent(new CustomEvent('toast', {
                                     detail: { message: 'Có lỗi xảy ra, thử lại sau.', type: 'error' }
