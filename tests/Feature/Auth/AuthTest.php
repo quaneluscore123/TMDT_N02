@@ -148,4 +148,45 @@ class AuthTest extends TestCase
         $response = $this->get('/admin/dashboard');
         $response->assertStatus(403);
     }
+    public function test_forgot_password_page_loads(): void
+    {
+        $this->get('/forgot-password')->assertOk()->assertViewIs('auth.forgot-password');
+    }
+    
+    public function test_send_reset_link_email(): void
+    {
+        $user = User::factory()->create();
+        $this->post('/forgot-password', ['email' => $user->email])
+             ->assertRedirect()
+             ->assertSessionHas('success');
+    }
+    
+    public function test_reset_password_page_loads(): void
+    {
+        $this->get('/reset-password/sample-token?email=test@example.com')
+             ->assertOk()
+             ->assertViewIs('auth.reset-password')
+             ->assertSee('sample-token');
+    }
+    
+    public function test_reset_password_updates_password(): void
+    {
+        $user = User::factory()->create();
+        $token = \Illuminate\Support\Facades\Password::createToken($user);
+        
+        $this->post('/reset-password', [
+            'token' => $token,
+            'email' => $user->email,
+            'password' => 'newpassword123',
+            'password_confirmation' => 'newpassword123',
+        ])->assertRedirect(route('login'));
+        
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newpassword123', $user->fresh()->password));
+    }
+    
+    public function test_google_redirect(): void
+    {
+        $this->get('/auth/google')
+             ->assertRedirect();
+    }
 }

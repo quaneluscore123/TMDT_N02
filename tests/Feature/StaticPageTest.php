@@ -81,4 +81,19 @@ class StaticPageTest extends TestCase
             ->assertOk()
             ->assertSee(route('pages.terms'), false);
     }
+    
+    public function test_buying_guide_page_is_accessible(): void
+    {
+        $this->get('/huong-dan-mua-hang')->assertOk();
+    }
+    
+    public function test_return_policy_page_is_accessible(): void
+    {
+        $this->get('/chinh-sach-doi-tra')->assertOk();
+    }
+    
+    public function test_faq_page_is_accessible(): void
+    {
+        $this->get('/faq')->assertOk();
+    }
 }

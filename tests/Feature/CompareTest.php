@@ -77,5 +77,44 @@ class CompareTest extends TestCase
 
         $this->post("/compare/add/{$products->last()->id}")
             ->assertSessionHas('error');
+            
+        $this->postJson("/compare/add/{$products->last()->id}")
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+    
+    public function test_user_cannot_add_duplicate_product(): void
+    {
+        $category = Category::factory()->create();
+        $product = Product::factory()->create(['category_id' => $category->id]);
+        
+        $this->session(['compare_products' => [$product->id]]);
+        
+        $this->post("/compare/add/{$product->id}")
+            ->assertSessionHas('error');
+            
+        $this->postJson("/compare/add/{$product->id}")
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_add_product_returns_json(): void
+    {
+        $category = Category::factory()->create();
+        $product = Product::factory()->create(['category_id' => $category->id]);
+        
+        $this->postJson("/compare/add/{$product->id}")
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+    }
+
+    public function test_clear_compare(): void
+    {
+        $this->session(['compare_products' => [1, 2, 3]]);
+        
+        $this->post("/compare/clear")
+            ->assertRedirect();
+            
+        $this->assertNull(session('compare_products'));
     }
 }

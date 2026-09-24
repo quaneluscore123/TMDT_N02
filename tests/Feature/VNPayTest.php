@@ -204,4 +204,45 @@ class VNPayTest extends TestCase
         $this->assertStringContainsString('vnp_TxnRef=VNP-URL-TEST', $url);
         $this->assertStringContainsString('vnp_TmnCode=', $url);
     }
+    
+    public function test_return_url_with_failed_response_code_shows_error(): void
+    {
+        [$payment, $order] = $this->makePaidFlowPayment(300000);
+
+        $data = $this->sign([
+            'vnp_TxnRef' => $payment->transaction_code,
+            'vnp_Amount' => '30000000',
+            'vnp_ResponseCode' => '24', // Hủy giao dịch
+            'vnp_TransactionStatus' => '24',
+        ]);
+
+        $response = $this->get(route('payment.vnpay.return', $data));
+
+        $response->assertOk()->assertSee('Giao dịch không thành công hoặc đã bị hủy');
+        $this->assertSame('failed', $payment->fresh()->status);
+        $this->assertSame('pending', $order->fresh()->payment_status);
+    }
+    
+    public function test_ipn_endpoint_returns_json_result(): void
+    {
+        [$payment, $order] = $this->makePaidFlowPayment(200000);
+
+        $data = $this->sign([
+            'vnp_TxnRef' => $payment->transaction_code,
+            'vnp_Amount' => '20000000',
+            'vnp_ResponseCode' => '00',
+        ]);
+
+        // Using the controller endpoint directly
+        $response = $this->getJson(route('payment.vnpay.ipn', $data));
+        
+        $response->assertOk()
+                 ->assertJson([
+                     'RspCode' => '00',
+                     'Message' => 'Confirm Success'
+                 ]);
+                 
+        $this->assertSame('paid', $payment->fresh()->status);
+        $this->assertSame('paid', $order->fresh()->payment_status);
+    }
 }
