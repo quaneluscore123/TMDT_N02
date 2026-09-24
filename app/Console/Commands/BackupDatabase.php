@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Process;
 
 class BackupDatabase extends Command
 {
@@ -35,7 +35,7 @@ class BackupDatabase extends Command
             ?: storage_path('app/backups/database_'.date('Y-m-d_His').'.sql');
 
         $dir = dirname($path);
-        if (! is_dir($dir) && ! mkdir($dir, 0755, true) && ! is_dir($dir)) {
+        if (! is_dir($dir) && ! @mkdir($dir, 0755, true) && ! is_dir($dir)) {
             $this->error("Không tạo được thư mục: {$dir}");
 
             return self::FAILURE;
@@ -58,20 +58,12 @@ class BackupDatabase extends Command
             $path
         );
 
-        $process = Process::fromShellCommandline(
-            $cmd,
-            null,
-            ['MYSQL_PWD' => $password] + $_ENV,
-            null,
-            300
-        );
+        $result = Process::timeout(300)
+            ->env(['MYSQL_PWD' => $password])
+            ->run($cmd);
 
-        try {
-            $process->mustRun();
-        } catch (\Throwable $e) {
-            $this->error('Backup thất bại: '.$e->getMessage());
-            $this->line($process->getErrorOutput());
-
+        if ($result->failed()) {
+            $this->error('Backup thất bại: '.$result->errorOutput());
             return self::FAILURE;
         }
 
@@ -86,7 +78,7 @@ class BackupDatabase extends Command
         return self::SUCCESS;
     }
 
-    private function resolveMysqldumpBinary(): ?string
+    protected function resolveMysqldumpBinary(): ?string
     {
         $candidates = array_filter([
             env('MYSQLDUMP_PATH'),
@@ -104,16 +96,10 @@ class BackupDatabase extends Command
                 }
 
                 if ($binary === 'mysqldump') {
-                    $process = Process::fromShellCommandline('mysqldump --version', null, null, null, 5);
+                    $result = Process::timeout(5)->run('mysqldump --version');
 
-                    try {
-                        $process->run();
-
-                        if ($process->isSuccessful()) {
-                            return 'mysqldump';
-                        }
-                    } catch (\Throwable) {
-                        // fallback tiếp
+                    if ($result->successful()) {
+                        return 'mysqldump';
                     }
                 }
 

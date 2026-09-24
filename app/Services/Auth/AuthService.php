@@ -128,10 +128,11 @@ class AuthService extends BaseService
         $referralCode = $existingUser ? $existingUser->referral_code : $this->generateUniqueReferralCode();
 
         $user = User::updateOrCreate(
-            ['provider_id' => $googleUser->getId(), 'provider' => 'google'],
+            ['email' => $googleUser->getEmail()],
             [
+                'provider_id' => $googleUser->getId(),
+                'provider' => 'google',
                 'name' => $googleUser->getName(),
-                'email' => $googleUser->getEmail(),
                 'avatar' => $googleUser->getAvatar(),
                 'email_verified_at' => now(),
                 'referral_code' => $referralCode,
