@@ -60,9 +60,11 @@ class User extends Authenticatable
 
     public function wishlistedProducts()
     {
-        return Product::whereHas('wishlistedBy', function ($q) {
-            $q->where('users.id', $this->id);
-        });
+        if (!$this->wishlist) {
+            return Product::query()->whereRaw('1 = 0');
+        }
+
+        return $this->wishlist->products();
     }
 
     public function reviews()
