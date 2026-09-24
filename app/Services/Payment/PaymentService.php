@@ -81,7 +81,7 @@ class PaymentService extends BaseService
             $order = $payment->order;
 
             // 3. Kiểm tra số tiền (VNPay nhân 100)
-            if ($payment->amount * 100 != $vnpAmount) {
+            if ((int) $payment->amount * 100 !== (int) $vnpAmount) {
                 return ['RspCode' => '04', 'Message' => 'Invalid amount'];
             }
 

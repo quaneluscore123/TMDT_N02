@@ -99,6 +99,54 @@
         </div>
     </div>
 
+    {{-- Behavior stats: top viewed + top sold + recent users --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div class="bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6">
+            <h2 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Sản phẩm xem nhiều</h2>
+            <div class="space-y-3">
+                @forelse($topViewed as $item)
+                    <div class="flex justify-between items-center p-3 bg-[#faf7f4] rounded-lg">
+                        <a href="{{ route('products.show', $item->slug) }}" class="text-sm text-[#3d3d3d] hover:text-[#b8847e] truncate mr-2">{{ $item->name }}</a>
+                        <span class="font-bold text-[#b8847e] text-sm whitespace-nowrap">{{ $item->views_count }} lượt</span>
+                    </div>
+                @empty
+                    <p class="text-sm text-[#9a9490]">Chưa có lượt xem.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6">
+            <h2 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Bán chạy</h2>
+            <div class="space-y-3">
+                @forelse($topSelling as $item)
+                    <div class="flex justify-between items-center p-3 bg-[#faf7f4] rounded-lg">
+                        <a href="{{ route('products.show', $item->product?->slug) }}" class="text-sm text-[#3d3d3d] hover:text-[#b8847e] truncate mr-2">{{ $item->product?->name ?? 'SP đã xóa' }}</a>
+                        <span class="font-bold text-[#b8847e] text-sm whitespace-nowrap">{{ $item->sold }} SP</span>
+                    </div>
+                @empty
+                    <p class="text-sm text-[#9a9490]">Chưa có đơn bán.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6">
+            <h2 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Khách mới</h2>
+            <div class="space-y-3">
+                @forelse($recentUsers as $u)
+                    <div class="flex justify-between items-center p-3 bg-[#faf7f4] rounded-lg">
+                        <div class="min-w-0 mr-2">
+                            <p class="text-sm font-medium text-[#3d3d3d] truncate">{{ $u->name }}</p>
+                            <p class="text-xs text-[#9a9490] truncate">{{ $u->email }}</p>
+                        </div>
+                        <span class="text-xs text-[#9a9490] whitespace-nowrap">{{ optional($u->created_at)->format('d/m') }}</span>
+                    </div>
+                @empty
+                    <p class="text-sm text-[#9a9490]">Chưa có khách.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
     {{-- Recent Orders Table --}}
     <div class="mt-6 bg-white rounded-xl shadow-sm border border-[#efe8e3] overflow-hidden">
         <div class="px-6 py-4 border-b border-[#efe8e3]">

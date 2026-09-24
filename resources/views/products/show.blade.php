@@ -115,10 +115,11 @@
 
                     {{-- Stock --}}
                     <div class="mb-5">
-                        @if($product->stock > 0)
+                        @php $displayStock = $hasVariants ? $product->variants->sum('stock') : $product->stock; @endphp
+                        @if($displayStock > 0)
                             <span class="inline-flex items-center gap-1.5 text-sm text-green-700 bg-green-50 px-3 py-1 rounded-lg">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Còn hàng ({{ $product->stock }})
+                                Còn hàng ({{ $displayStock }})
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1.5 text-sm text-red-600 bg-red-50 px-3 py-1 rounded-lg">
@@ -128,15 +129,66 @@
                     </div>
 
                     {{-- Add to Cart --}}
-                    @if($product->stock > 0)
+                    @if(($hasVariants ? $product->variants->sum('stock') : $product->stock) > 0)
                         <form action="{{ route('cart.add') }}" method="POST">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
+
+                            @if($hasVariants)
+                                <div class="mb-5" x-data="{
+                                    selected: '',
+                                    sizes: {{ json_encode($product->variants->pluck('size')->filter()->unique()->values()) }},
+                                    colors: {{ json_encode($product->variants->pluck('color')->filter()->unique()->values()) }},
+                                    variants: {{ json_encode($product->variants->map(fn($v) => ['id'=>$v->id,'size'=>$v->size,'color'=>$v->color,'stock'=>$v->stock,'price'=>$v->unitPrice()])->values()) }},
+                                    get current() { return this.variants.find(v => v.id === Number(this.selected)) || null },
+                                    get available() { return this.variants.filter(v => v.stock > 0) }
+                                }">
+                                    <label class="text-sm font-medium text-[#3d3d3d] mb-2 block">Phân loại:</label>
+
+                                    @if($product->variants->pluck('size')->filter()->isNotEmpty())
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <template x-for="size in sizes" :key="size">
+                                                <button type="button"
+                                                        @click="
+                                                            const match = variants.find(v => v.size === size && (!colors.length || v.color === (current?.color ?? variants.find(v=>v.size===size && v.stock>0)?.color)));
+                                                            selected = (match || variants.find(v => v.size === size))?.id ?? '';
+                                                        "
+                                                        class="px-3 py-1.5 border rounded-lg text-sm"
+                                                        :class="(current?.size === size) ? 'border-[#b8847e] bg-[#faf7f4] text-[#b8847e] font-semibold' : 'border-[#efe8e3] text-[#3d3d3d]'"
+                                                        x-text="size"></button>
+                                            </template>
+                                        </div>
+                                    @endif
+
+                                    @if($product->variants->pluck('color')->filter()->isNotEmpty())
+                                        <div class="flex flex-wrap gap-2 mb-3">
+                                            <template x-for="color in colors" :key="color">
+                                                <button type="button"
+                                                        @click="
+                                                            const match = variants.find(v => v.color === color && (!sizes.length || v.size === (current?.size ?? variants.find(v=>v.color===color && v.stock>0)?.size)));
+                                                            selected = (match || variants.find(v => v.color === color))?.id ?? '';
+                                                        "
+                                                        class="px-3 py-1.5 border rounded-lg text-sm"
+                                                        :class="(current?.color === color) ? 'border-[#b8847e] bg-[#faf7f4] text-[#b8847e] font-semibold' : 'border-[#efe8e3] text-[#3d3d3d]'"
+                                                        x-text="color"></button>
+                                            </template>
+                                        </div>
+                                    @endif
+
+                                    <input type="hidden" name="variant_id" :value="selected || ''">
+                                    <p class="text-xs text-[#9a9490]" x-show="current">
+                                        <span x-show="current">Còn <span x-text="current?.stock"></span> · <span x-text="new Intl.NumberFormat('vi-VN').format(current?.price ?? 0) + '₫'"></span></span>
+                                    </p>
+                                    <p class="text-xs text-red-500 mt-1" x-show="!selected && selected !== 0">Vui lòng chọn phân loại</p>
+                                </div>
+                            @endif
+
                             <div class="mb-5">
                                 <label class="text-sm font-medium text-[#3d3d3d] mb-2 block">Số lượng:</label>
                                 <div class="flex items-center gap-1">
                                     <button type="button" onclick="changeQty(-1)" class="qty-btn">−</button>
-                                    <input type="number" name="quantity" id="qty-input" value="1" min="1" max="{{ $product->stock }}"
+                                    <input type="number" name="quantity" id="qty-input" value="1" min="1"
+                                           max="{{ $hasVariants ? 99 : $product->stock }}"
                                            class="w-14 border border-[#efe8e3] rounded-lg px-2 py-1.5 text-center text-sm font-medium focus:ring-2 focus:ring-[#c9a9a6] focus:border-transparent">
                                     <button type="button" onclick="changeQty(1)" class="qty-btn">+</button>
                                 </div>
@@ -191,27 +243,31 @@
                     </div>
 
                     {{-- Share --}}
-                    @auth
-                        <div class="mt-6 pt-5 border-t border-[#efe8e3]">
-                            <p class="text-sm font-medium text-[#3d3d3d] mb-3">Chia sẻ sản phẩm:</p>
-                            <div class="flex gap-2">
-                                <button onclick="shareToFacebook()"
-                                        class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
-                                    Facebook
-                                </button>
-                                <button onclick="shareToZalo()"
-                                        class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
-                                    Zalo
-                                </button>
+                    <div class="mt-6 pt-5 border-t border-[#efe8e3]">
+                        <p class="text-sm font-medium text-[#3d3d3d] mb-3">Chia sẻ sản phẩm:</p>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="shareToFacebook()"
+                                    class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
+                                Facebook
+                            </button>
+                            <button onclick="shareToMessenger()"
+                                    class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
+                                Messenger
+                            </button>
+                            <button onclick="shareToZalo()"
+                                    class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
+                                Zalo
+                            </button>
+                            @auth
                                 <button onclick="copyReferralLink()"
                                         class="bg-[#3d3a37] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#b8847e] transition-colors">
                                     Copy link
                                 </button>
-                            </div>
-                            <input type="hidden" id="referral-link"
-                                   value="{{ route('products.show', $product->slug) }}?ref={{ Auth::user()->referral_code }}">
+                            @endauth
                         </div>
-                    @endauth
+                        <input type="hidden" id="referral-link"
+                               value="{{ route('products.show', $product->slug) }}@auth?ref={{ Auth::user()->referral_code }}@endauth">
+                    </div>
                 </div>
             </div>
         </div>
@@ -426,6 +482,11 @@
         function shareToFacebook() {
             const url = encodeURIComponent(document.getElementById('referral-link').value);
             window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
+        }
+
+        function shareToMessenger() {
+            const url = encodeURIComponent(document.getElementById('referral-link').value);
+            window.open(`https://www.messenger.com/share?link=${url}`, '_blank');
         }
 
         function shareToZalo() {

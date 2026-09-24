@@ -10,6 +10,7 @@ class CartItem extends Model
     protected $fillable = [
         'cart_id',
         'product_id',
+        'variant_id',
         'quantity',
         'price', // Giá tại thời điểm thêm vào giỏ (snapshot)
     ];
@@ -28,7 +29,9 @@ class CartItem extends Model
      */
     public function subtotal(): int
     {
-        return $this->quantity * $this->product->effectivePrice();
+        $unit = $this->variant?->unitPrice() ?? $this->product->effectivePrice();
+
+        return $this->quantity * $unit;
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────
@@ -41,5 +44,10 @@ class CartItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

@@ -22,9 +22,9 @@ class AuthTest extends TestCase
     public function test_user_can_register(): void
     {
         $response = $this->post('/register', [
-            'name'                  => 'Nguyen Van A',
-            'email'                 => 'test@example.com',
-            'password'              => 'password123',
+            'name' => 'Nguyen Van A',
+            'email' => 'test@example.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -38,9 +38,9 @@ class AuthTest extends TestCase
         User::factory()->create(['email' => 'existing@example.com']);
 
         $response = $this->post('/register', [
-            'name'                  => 'Another User',
-            'email'                 => 'existing@example.com',
-            'password'              => 'password123',
+            'name' => 'Another User',
+            'email' => 'existing@example.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -50,9 +50,9 @@ class AuthTest extends TestCase
     public function test_new_user_gets_referral_code(): void
     {
         $this->post('/register', [
-            'name'                  => 'Nguyen Van B',
-            'email'                 => 'newuser@example.com',
-            'password'              => 'password123',
+            'name' => 'Nguyen Van B',
+            'email' => 'newuser@example.com',
+            'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
 
@@ -75,7 +75,7 @@ class AuthTest extends TestCase
         $user = User::factory()->create(['password' => bcrypt('password123')]);
 
         $response = $this->post('/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'password123',
         ]);
 
@@ -88,12 +88,32 @@ class AuthTest extends TestCase
         $user = User::factory()->create(['password' => bcrypt('correctpass')]);
 
         $response = $this->post('/login', [
-            'email'    => $user->email,
+            'email' => $user->email,
             'password' => 'wrongpass',
         ]);
 
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
+
+    public function test_blocked_user_cannot_login(): void
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('password123'),
+            'is_active' => false,
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+        $this->assertStringContainsString(
+            'đã bị khóa',
+            session('errors')->first('email')
+        );
     }
 
     // ─── Logout ──────────────────────────────────────────────────────────────

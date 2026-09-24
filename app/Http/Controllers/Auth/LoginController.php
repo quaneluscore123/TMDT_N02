@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\AuthService;
+use App\Services\Cart\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -50,12 +51,28 @@ class LoginController extends Controller
         );
 
         if (! $success) {
+            if ($this->authService->isBlockedLogin(
+                (string) $request->input('email'),
+                (string) $request->input('password')
+            )) {
+                return back()
+                    ->withInput($request->only('email'))
+                    ->withErrors(['email' => 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.']);
+            }
+
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors(['email' => 'Email hoặc mật khẩu không chính xác.']);
         }
 
         $request->session()->regenerate();
+
+        // Gộp giỏ guest (session) vào giỏ user
+        try {
+            app(CartService::class)->mergeGuestCart(auth()->id());
+        } catch (\Throwable) {
+            // không chặn đăng nhập nếu merge lỗi
+        }
 
         // Admin → trang quản trị, customer → trang chủ
         if (auth()->user()->isAdmin()) {

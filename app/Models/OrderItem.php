@@ -9,12 +9,15 @@ class OrderItem extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['order_id', 'product_id', 'product_name', 'price', 'quantity', 'subtotal'];
+    protected $fillable = [
+        'order_id', 'product_id', 'variant_id', 'product_name', 'size', 'color',
+        'price', 'quantity', 'subtotal',
+    ];
 
     protected function casts(): array
     {
         return [
-            'price'    => 'integer',
+            'price' => 'integer',
             'quantity' => 'integer',
             'subtotal' => 'integer',
         ];
@@ -28,5 +31,17 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    public function optionLabel(): ?string
+    {
+        $label = collect([$this->size, $this->color])->filter()->implode(' - ');
+
+        return $label !== '' ? $label : null;
     }
 }

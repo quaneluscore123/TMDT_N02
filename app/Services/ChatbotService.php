@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Log;
 class ChatbotService
 {
     private string $apiKey;
+
     private string $model;
+
     private string $systemPrompt;
 
     public function __construct()
@@ -19,12 +21,12 @@ class ChatbotService
         $this->apiKey = config('services.gemini.key', '');
         $this->model = config('services.gemini.model', 'gemini-3.5-flash');
         $this->systemPrompt = <<<'PROMPT'
-Bạn là trợ lý ảo của SocialShop — cửa hàng trực tuyến bán điện thoại, phụ kiện và đồ công nghệ.
+Bạn là trợ lý ảo của SocialShop — cửa hàng trực tuyến bán thời trang và phụ kiện (áo quần, giày dép, phụ kiện thời trang).
 Hãy trả lời ngắn gọn, thân thiện bằng tiếng Việt.
 Nếu hỏi về giá, hãy khuyên khách vào xem trang sản phẩm.
 Nếu hỏi về giao hàng, miễn phí ship cho đơn từ 500.000đ, giao toàn quốc.
 Nếu hỏi về thanh toán, hỗ trợ COD và VNPay.
-Nếu hỏi về liên hệ, hotline 1900-xxxx-xxx, email support@socialshop.vn.
+Nếu hỏi về liên hệ, hotline 077123456, email support@socialshop.vn.
 Không trả lời các câu hỏi ngoài phạm vi cửa hàng.
 PROMPT;
     }
@@ -71,11 +73,11 @@ PROMPT;
 
             $payload = [
                 'systemInstruction' => [
-                    'parts' => [['text' => $this->systemPrompt . $contextParts]],
+                    'parts' => [['text' => $this->systemPrompt.$contextParts]],
                 ],
                 'contents' => $contents,
                 'generationConfig' => [
-                    'temperature'     => 0.7,
+                    'temperature' => 0.7,
                     'maxOutputTokens' => 256,
                 ],
             ];
@@ -86,11 +88,13 @@ PROMPT;
 
             if ($response->status() === 429) {
                 Log::warning('Gemini rate limited', ['status' => 429]);
+
                 return $this->fallbackResponse($userMessage, $userId);
             }
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return $data['candidates'][0]['content']['parts'][0]['text']
                     ?? 'Xin lỗi, tôi chưa hiểu yêu cầu của bạn.';
             }
@@ -110,7 +114,7 @@ PROMPT;
         $context = '';
 
         $faqs = $this->searchFaqs($userMessage);
-        if (!empty($faqs)) {
+        if (! empty($faqs)) {
             $context .= "\n\n[Hãy ưu tiên trả lời dựa trên thông tin FAQ sau]";
             foreach ($faqs as $faq) {
                 $context .= "\n- Q: {$faq['question']}\n  A: {$faq['answer']}";
@@ -118,7 +122,7 @@ PROMPT;
         }
 
         $products = $this->searchProducts($userMessage);
-        if (!empty($products)) {
+        if (! empty($products)) {
             $context .= "\n\n[Thông tin sản phẩm tìm thấy]";
             foreach ($products as $p) {
                 $stock = $p['in_stock'] ? 'còn hàng' : 'hết hàng';
@@ -128,7 +132,7 @@ PROMPT;
 
         if ($userId) {
             $orderInfo = $this->getUserOrderInfo($userId, $userMessage);
-            if (!empty($orderInfo)) {
+            if (! empty($orderInfo)) {
                 $context .= "\n\n[Thông tin đơn hàng của khách]";
                 $context .= "\n{$orderInfo}";
             }
@@ -139,7 +143,7 @@ PROMPT;
 
     public function searchProducts(string $query): array
     {
-        $productKeywords = ['giá', 'price', 'bao nhiêu', 'còn hàng', 'hết hàng', 'có không', 'sản phẩm', 'điện thoại', 'phụ kiện', 'case', 'ốp', 'tai nghe', 'sạc', 'cáp'];
+        $productKeywords = ['giá', 'price', 'bao nhiêu', 'còn hàng', 'hết hàng', 'có không', 'sản phẩm', 'áo', 'quần', 'giày', 'dép', 'váy', 'túi', 'phụ kiện', 'thời trang', 'size', 'màu'];
 
         $hasProductKeyword = false;
         foreach ($productKeywords as $kw) {
@@ -149,12 +153,12 @@ PROMPT;
             }
         }
 
-        if (!$hasProductKeyword) {
+        if (! $hasProductKeyword) {
             return [];
         }
 
         $cleanQuery = mb_strtolower($query);
-        $cleanQuery = str_replace(['giá', 'price', 'bao nhiêu', 'tiền', 'còn hàng', 'hết hàng', 'có không', 'không', 'sản phẩm', 'điện thoại', 'phụ kiện', 'bao钱'], '', $cleanQuery);
+        $cleanQuery = str_replace(['giá', 'price', 'bao nhiêu', 'tiền', 'còn hàng', 'hết hàng', 'có không', 'không', 'sản phẩm', 'áo', 'quần', 'giày', 'dép', 'váy', 'túi', 'phụ kiện', 'thời trang'], '', $cleanQuery);
         $cleanQuery = preg_replace('/\s+/', ' ', trim($cleanQuery));
 
         if (empty($cleanQuery)) {
@@ -162,9 +166,9 @@ PROMPT;
                 ->with('category')
                 ->limit(5)
                 ->get()
-                ->map(fn($p) => [
+                ->map(fn ($p) => [
                     'name' => $p->name,
-                    'price' => number_format($p->sale_price ?? $p->price) . 'đ',
+                    'price' => number_format($p->sale_price ?? $p->price).'đ',
                     'category' => $p->category->name ?? 'N/A',
                     'in_stock' => $p->stock > 0,
                 ])
@@ -174,15 +178,15 @@ PROMPT;
         return Product::where('status', 'active')
             ->where(function ($q) use ($cleanQuery) {
                 $q->where('name', 'LIKE', "%{$cleanQuery}%")
-                  ->orWhere('brand', 'LIKE', "%{$cleanQuery}%")
-                  ->orWhere('description', 'LIKE', "%{$cleanQuery}%");
+                    ->orWhere('brand', 'LIKE', "%{$cleanQuery}%")
+                    ->orWhere('description', 'LIKE', "%{$cleanQuery}%");
             })
             ->with('category')
             ->limit(5)
             ->get()
-            ->map(fn($p) => [
+            ->map(fn ($p) => [
                 'name' => $p->name,
-                'price' => number_format($p->sale_price ?? $p->price) . 'đ',
+                'price' => number_format($p->sale_price ?? $p->price).'đ',
                 'category' => $p->category->name ?? 'N/A',
                 'in_stock' => $p->stock > 0,
             ])
@@ -214,9 +218,9 @@ PROMPT;
             }
         }
 
-        usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
+        usort($scored, fn ($a, $b) => $b['score'] <=> $a['score']);
 
-        return array_values(array_slice(array_map(fn($s) => [
+        return array_values(array_slice(array_map(fn ($s) => [
             'question' => $s['faq']->question,
             'answer' => $s['faq']->answer,
         ], $scored), 0, 3));
@@ -234,7 +238,7 @@ PROMPT;
             }
         }
 
-        if (!$hasOrderKeyword) {
+        if (! $hasOrderKeyword) {
             return '';
         }
 
@@ -244,28 +248,28 @@ PROMPT;
         }
 
         $order = Order::where('user_id', $userId)
-            ->when($orderCode, fn($q) => $q->where('order_code', $orderCode))
+            ->when($orderCode, fn ($q) => $q->where('order_code', $orderCode))
             ->with('items')
             ->latest()
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             return 'Không tìm thấy đơn hàng nào.';
         }
 
         $statusMap = [
-            'pending'    => 'Chờ xác nhận',
-            'confirmed'  => 'Đã xác nhận',
-            'shipping'   => 'Đang giao hàng',
-            'delivered'  => 'Đã giao hàng',
-            'cancelled'  => 'Đã hủy',
+            'pending' => 'Chờ xác nhận',
+            'confirmed' => 'Đã xác nhận',
+            'shipping' => 'Đang giao hàng',
+            'delivered' => 'Đã giao hàng',
+            'cancelled' => 'Đã hủy',
         ];
 
-        $items = $order->items->map(fn($i) => "{$i->product_name} x{$i->quantity}")->implode(', ');
+        $items = $order->items->map(fn ($i) => "{$i->product_name} x{$i->quantity}")->implode(', ');
 
-        return "Mã đơn: {$order->order_code} | Trạng thái: " . ($statusMap[$order->status] ?? $order->status)
-            . " | Tổng: " . number_format($order->total) . "đ"
-            . " | Sản phẩm: {$items}";
+        return "Mã đơn: {$order->order_code} | Trạng thái: ".($statusMap[$order->status] ?? $order->status)
+            .' | Tổng: '.number_format($order->total).'đ'
+            ." | Sản phẩm: {$items}";
     }
 
     public function fallbackResponse(string $message, ?int $userId = null): string
@@ -274,47 +278,42 @@ PROMPT;
 
         if ($userId) {
             $orderInfo = $this->getUserOrderInfo($userId, $message);
-            if (!empty($orderInfo)) {
+            if (! empty($orderInfo)) {
                 return $orderInfo;
             }
         }
 
         $products = $this->searchProducts($message);
-        if (!empty($products)) {
+        if (! empty($products)) {
             $lines = [];
             foreach ($products as $p) {
                 $stock = $p['in_stock'] ? 'còn hàng' : 'hết hàng';
                 $lines[] = "- {$p['name']}: {$p['price']} ({$stock})";
             }
-            return "Các sản phẩm tìm thấy:\n" . implode("\n", $lines)
-                . "\nBạn có thể xem chi tiết tại trang sản phẩm.";
+
+            return "Các sản phẩm tìm thấy:\n".implode("\n", $lines)
+                ."\nBạn có thể xem chi tiết tại trang sản phẩm.";
         }
 
         $faqs = $this->searchFaqs($message);
-        if (!empty($faqs)) {
+        if (! empty($faqs)) {
             return $faqs[0]['answer'];
         }
 
         $priceWords = ['giá', 'giá cả', 'bao nhiêu', 'price', 'cost', 'tiền'];
         foreach ($priceWords as $pw) {
             if (str_contains($lower, $pw)) {
-                return 'Bạn có thể xem giá chi tiết từng sản phẩm tại trang Sản phẩm. Shop có nhiều sản phẩm từ 150.000đ đến 37.000.000đ!';
+                return 'Bạn có thể xem giá chi tiết từng sản phẩm tại trang Sản phẩm. Shop có nhiều sản phẩm thời trang từ 150.000đ trở lên!';
             }
         }
 
         return match (true) {
-            str_contains($lower, 'xin chào') || str_contains($lower, 'hello') || str_contains($lower, 'hi')
-                => 'Xin chào! Rất vui được hỗ trợ bạn. Bạn cần tìm sản phẩm nào?',
-            str_contains($lower, 'giá') || str_contains($lower, 'price')
-                => 'Bạn có thể xem giá sản phẩm trên trang chi tiết sản phẩm. Chúng tôi có nhiều ưu đãi hấp dẫn!',
-            str_contains($lower, 'giao hàng') || str_contains($lower, 'ship')
-                => 'Chúng tôi giao hàng toàn quốc. Miễn phí ship cho đơn từ 500.000đ!',
-            str_contains($lower, 'thanh toán') || str_contains($lower, 'payment')
-                => 'Chúng tôi hỗ trợ thanh toán COD và VNPay. Bạn chọn phương thức nào phù hợp nhất!',
-            str_contains($lower, 'liên hệ')
-                => 'Bạn có thể liên hệ hotline 1900-xxxx-xxx hoặc email support@socialshop.vn.',
-            default
-                => 'Cảm ơn bạn đã nhắn tin! Hiện tại tôi là trợ lý demo. Vui lòng xem thêm thông tin trên trang web hoặc liên hệ hỗ trợ.',
+            str_contains($lower, 'xin chào') || str_contains($lower, 'hello') || str_contains($lower, 'hi') => 'Xin chào! Rất vui được hỗ trợ bạn. Bạn cần tìm sản phẩm nào?',
+            str_contains($lower, 'giá') || str_contains($lower, 'price') => 'Bạn có thể xem giá sản phẩm trên trang chi tiết sản phẩm. Chúng tôi có nhiều ưu đãi hấp dẫn!',
+            str_contains($lower, 'giao hàng') || str_contains($lower, 'ship') => 'Chúng tôi giao hàng toàn quốc. Miễn phí ship cho đơn từ 500.000đ!',
+            str_contains($lower, 'thanh toán') || str_contains($lower, 'payment') => 'Chúng tôi hỗ trợ thanh toán COD và VNPay. Bạn chọn phương thức nào phù hợp nhất!',
+            str_contains($lower, 'liên hệ') => 'Bạn có thể liên hệ hotline 077123456 hoặc email support@socialshop.vn.',
+            default => 'Cảm ơn bạn đã nhắn tin! Hiện tại tôi là trợ lý demo. Vui lòng xem thêm thông tin trên trang web hoặc liên hệ hỗ trợ.',
         };
     }
 }

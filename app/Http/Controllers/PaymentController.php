@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
 use App\Services\Payment\PaymentService;
 use App\Services\Payment\VNPayService;
 use Illuminate\Http\Request;
-use App\Models\Payment;
 
 class PaymentController extends Controller
 {
@@ -20,14 +20,19 @@ class PaymentController extends Controller
 
         if ($this->vnpayService->verifyCallback($inputData)) {
             $responseCode = $inputData['vnp_ResponseCode'] ?? '';
-            
+
             if ($responseCode === '00') {
+                // Cập nhật payment/order ngay trên return (idempotent — IPN vẫn xử lý nếu portal gọi)
+                $this->paymentService->processVNPayIpn($inputData);
+
                 return view('payment.vnpay-return', [
                     'status' => 'success',
                     'message' => 'Giao dịch thành công',
                     'transactionCode' => $inputData['vnp_TxnRef'] ?? '',
                 ]);
             } else {
+                $this->paymentService->processVNPayIpn($inputData);
+
                 return view('payment.vnpay-return', [
                     'status' => 'error',
                     'message' => 'Giao dịch không thành công hoặc đã bị hủy',

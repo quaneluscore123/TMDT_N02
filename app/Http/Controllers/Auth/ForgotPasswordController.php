@@ -25,8 +25,9 @@ class ForgotPasswordController extends Controller
     {
         $status = $this->authService->sendResetLink($request->email);
 
-        if ($status === Password::RESET_LINK_SENT) {
-            return back()->with('success', 'Chúng tôi đã gửi link đặt lại mật khẩu vào email của bạn.');
+        // Không tiết lộ email có tồn tại hay không (chống enumeration)
+        if ($status === Password::RESET_LINK_SENT || $status === Password::INVALID_USER) {
+            return back()->with('success', 'Nếu email đã đăng ký, chúng tôi đã gửi link đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.');
         }
 
         return back()->withErrors(['email' => __($status)]);
@@ -43,9 +44,9 @@ class ForgotPasswordController extends Controller
     public function resetPassword(Request $request): RedirectResponse
     {
         $request->validate([
-            'token'                 => 'required',
-            'email'                 => 'required|email',
-            'password'              => 'required|confirmed|min:8',
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|confirmed|min:8',
         ]);
 
         $status = $this->authService->resetPassword($request->only(

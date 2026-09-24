@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\ChatbotService;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ChatController extends Controller
 {
@@ -18,7 +20,16 @@ class ChatController extends Controller
             return response()->json(['error' => 'Message is required'], 400);
         }
 
+        // Guest: chỉ FAQ/fallback — không gọi Gemini, không lộ dữ liệu đơn hàng
+        if (! Auth::check()) {
+            return $this->sendSseResponse(function () use ($message, $chatbot) {
+                $text = $chatbot->fallbackResponse($message, null);
+                $this->sendSseEvent(['text' => $text, 'done' => true]);
+            });
+        }
+
         $userId = Auth::id();
+        $history = array_slice(is_array($history) ? $history : [], -20);
         $contextParts = $chatbot->buildContext($message, $userId);
 
         $apiKey = $chatbot->getApiKey();
@@ -39,40 +50,40 @@ class ChatController extends Controller
             $contents = [];
             foreach ($history as $msg) {
                 $contents[] = [
-                    'role'  => $msg['type'] === 'user' ? 'user' : 'model',
+                    'role' => $msg['type'] === 'user' ? 'user' : 'model',
                     'parts' => [['text' => $msg['content']]],
                 ];
             }
 
             $payload = [
                 'systemInstruction' => [
-                    'parts' => [['text' => $systemPrompt . $contextParts]],
+                    'parts' => [['text' => $systemPrompt.$contextParts]],
                 ],
                 'contents' => $contents,
                 'generationConfig' => [
-                    'temperature'     => 0.7,
+                    'temperature' => 0.7,
                     'maxOutputTokens' => 256,
-                    'thinkingConfig'  => ['thinkingBudget' => 0],
+                    'thinkingConfig' => ['thinkingBudget' => 0],
                 ],
             ];
 
-            $client = new \GuzzleHttp\Client();
+            $client = new Client;
             $response = $client->post($url, [
-                'json'    => $payload,
+                'json' => $payload,
                 'headers' => ['x-goog-api-key' => $apiKey],
                 'timeout' => 20,
-                'stream'  => true,
+                'stream' => true,
             ]);
 
             if ($response->getStatusCode() !== 200) {
-                throw new \Exception('Gemini API returned status: ' . $response->getStatusCode());
+                throw new \Exception('Gemini API returned status: '.$response->getStatusCode());
             }
 
             return $this->sendSseResponse(function () use ($response) {
                 $body = $response->getBody();
                 $buffer = '';
 
-                while (!$body->eof()) {
+                while (! $body->eof()) {
                     $chunk = $body->read(4096);
                     if ($chunk === '' || $chunk === false) {
                         break;
@@ -94,6 +105,7 @@ class ChatController extends Controller
 
                             if ($jsonStr === '[DONE]') {
                                 $this->sendSseEvent(['done' => true]);
+
                                 return;
                             }
 
@@ -119,7 +131,7 @@ class ChatController extends Controller
         } catch (\Exception $e) {
             Log::error('Chat streaming error', [
                 'message' => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return $this->sendSseResponse(function () use ($message, $chatbot, $userId) {
@@ -129,7 +141,7 @@ class ChatController extends Controller
         }
     }
 
-    private function sendSseResponse(callable $callback): \Symfony\Component\HttpFoundation\StreamedResponse
+    private function sendSseResponse(callable $callback): StreamedResponse
     {
         return response()->stream(function () use ($callback) {
             while (ob_get_level() > 0) {
@@ -141,17 +153,17 @@ class ChatController extends Controller
 
             flush();
         }, 200, [
-            'Content-Type'      => 'text/event-stream',
-            'Cache-Control'     => 'no-cache, no-store, must-revalidate',
-            'Connection'        => 'keep-alive',
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Connection' => 'keep-alive',
             'X-Accel-Buffering' => 'no',
-            'Pragma'            => 'no-cache',
+            'Pragma' => 'no-cache',
         ]);
     }
 
     private function sendSseEvent(array $data): void
     {
-        echo "data: " . json_encode($data) . "\n\n";
+        echo 'data: '.json_encode($data)."\n\n";
         if (ob_get_level() > 0) {
             ob_flush();
         }

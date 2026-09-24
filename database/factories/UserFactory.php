@@ -17,16 +17,17 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'              => fake('vi_VN')->name(),
-            'email'             => fake()->unique()->safeEmail(),
+            'name' => fake('vi_VN')->name(),
+            'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password'          => static::$password ??= Hash::make('password'),
-            'remember_token'    => Str::random(10),
-            'role'              => 'customer',
-            'referral_code'     => strtoupper(Str::random(8)),
-            'avatar'            => null,
-            'provider'          => null,
-            'provider_id'       => null,
+            'password' => static::$password ??= Hash::make('password'),
+            'remember_token' => Str::random(10),
+            'role' => 'customer',
+            'is_active' => true,
+            'referral_code' => strtoupper(Str::random(8)),
+            'avatar' => null,
+            'provider' => null,
+            'provider_id' => null,
         ];
     }
 
@@ -43,9 +44,9 @@ class UserFactory extends Factory
     public function googleUser(): static
     {
         return $this->state(fn () => [
-            'provider'    => 'google',
+            'provider' => 'google',
             'provider_id' => fake()->numerify('####################'),
-            'password'    => null,
+            'password' => null,
         ]);
     }
 }

@@ -43,14 +43,20 @@ class AuthService extends BaseService
         $success = Auth::attempt([
             'email' => $credentials['email'],
             'password' => $credentials['password'],
+            'is_active' => true,
         ], $remember);
 
         if ($success) {
             AuditService::log('login_success', 'User', Auth::id());
         } else {
             $userId = User::where('email', $credentials['email'])->value('id');
+            $user = $userId ? User::find($userId) : null;
+            $blocked = $user
+                && ! $user->is_active
+                && Hash::check($credentials['password'], $user->password);
+
             AuditService::log(
-                'login_failed',
+                $blocked ? 'login_blocked' : 'login_failed',
                 'User',
                 $userId ? (int) $userId : null,
                 ['email' => $credentials['email']],
@@ -59,6 +65,15 @@ class AuthService extends BaseService
         }
 
         return $success;
+    }
+
+    public function isBlockedLogin(string $email, string $password): bool
+    {
+        $user = User::where('email', $email)->first();
+
+        return $user
+            && ! $user->is_active
+            && Hash::check($password, $user->password);
     }
 
     /**

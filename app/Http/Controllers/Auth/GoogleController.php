@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\Auth\AuthService;
+use App\Services\Cart\CartService;
 use App\Services\Referral\ReferralService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
+use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
 {
@@ -21,7 +23,7 @@ class GoogleController extends Controller
      */
     public function redirect(): RedirectResponse
     {
-        return \Laravel\Socialite\Facades\Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->redirect();
     }
 
     /**
@@ -31,8 +33,20 @@ class GoogleController extends Controller
     {
         try {
             $user = $this->authService->handleGoogleCallback();
+
+            if (! $user->is_active) {
+                return redirect()->route('login')
+                    ->withErrors(['email' => 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ hỗ trợ.']);
+            }
+
             Auth::login($user, remember: true);
             request()->session()->regenerate();
+
+            try {
+                app(CartService::class)->mergeGuestCart($user->id);
+            } catch (\Throwable) {
+                // bỏ qua lỗi merge cart
+            }
 
             if ($user->isAdmin()) {
                 $response = redirect()->route('admin.dashboard');
@@ -51,7 +65,8 @@ class GoogleController extends Controller
 
             return $response;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Google Auth Failed: ' . $e->getMessage());
+            Log::error('Google Auth Failed: '.$e->getMessage());
+
             return redirect()->route('login')
                 ->withErrors(['email' => 'Đăng nhập Google thất bại. Vui lòng thử lại.']);
         }

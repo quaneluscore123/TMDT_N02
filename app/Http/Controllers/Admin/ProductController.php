@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -47,7 +48,7 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'stock' => 'required|integer|min:0',
             'brand' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'sometimes|in:active,inactive',
         ]);
 
@@ -88,13 +89,15 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'stock' => 'required|integer|min:0',
             'brand' => 'nullable|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
             'status' => 'sometimes|in:active,inactive,out_of_stock',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
 
         $product->update(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
+
+        $this->syncVariants($product, $request);
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('images/products', 'public');
@@ -125,6 +128,64 @@ class ProductController extends Controller
             ->with('success', 'Cập nhật sản phẩm thành công!');
     }
 
+    private function syncVariants(Product $product, Request $request): void
+    {
+        if (! $request->has('variants')) {
+            return;
+        }
+
+        $rows = $request->input('variants', []);
+        $keepIds = [];
+
+        foreach ($rows as $row) {
+            $size = trim((string) ($row['size'] ?? ''));
+            $color = trim((string) ($row['color'] ?? ''));
+            $stock = (int) ($row['stock'] ?? 0);
+            $price = $row['price'] !== null && $row['price'] !== '' ? (int) $row['price'] : null;
+            $id = $row['id'] ?? null;
+
+            if ($size === '' && $color === '') {
+                continue;
+            }
+
+            $variant = $id
+                ? ProductVariant::where('product_id', $product->id)->find($id)
+                : ProductVariant::where('product_id', $product->id)
+                    ->where('size', $size)
+                    ->where('color', $color)
+                    ->first();
+
+            if ($variant) {
+                $variant->update([
+                    'size' => $size ?: null,
+                    'color' => $color ?: null,
+                    'stock' => $stock,
+                    'price' => $price,
+                ]);
+            } else {
+                $variant = ProductVariant::create([
+                    'product_id' => $product->id,
+                    'size' => $size ?: null,
+                    'color' => $color ?: null,
+                    'stock' => $stock,
+                    'price' => $price,
+                ]);
+            }
+
+            $keepIds[] = $variant->id;
+        }
+
+        ProductVariant::where('product_id', $product->id)
+            ->when(! empty($keepIds), fn ($q) => $q->whereNotIn('id', $keepIds))
+            ->delete();
+
+        if ($product->variants()->exists()) {
+            $product->update([
+                'stock' => (int) $product->variants()->sum('stock'),
+            ]);
+        }
+    }
+
     public function destroy(Product $product)
     {
         $product->delete();
@@ -152,7 +213,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'images' => 'required|array|min:1',
-            'images.*' => 'image|max:2048',
+            'images.*' => 'mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $hasPrimary = $product->images()->where('is_primary', true)->exists();

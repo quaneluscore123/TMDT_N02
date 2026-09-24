@@ -6,10 +6,11 @@
         $discountPercent = round((1 - $product->sale_price / $product->price) * 100);
     }
     $displayPrice = $discountPercent > 0 ? $product->sale_price : $product->price;
-    $soldCount = $product->sold_count ?? rand(10, 500);
+    $soldCount = (int) ($product->sold_count ?? 0);
     $totalStock = $product->stock + $soldCount;
     $soldPercent = $totalStock > 0 ? round(($soldCount / $totalStock) * 100) : 0;
-    $rating = $product->average_rating ?? 4.5;
+    $hasRating = (int) ($product->reviews_count ?? 0) > 0;
+    $rating = $hasRating ? (float) $product->average_rating : 0;
     $isWishlisted = in_array($product->id, $wishlistIds);
 @endphp
 
@@ -147,26 +148,34 @@
         </div>
 
         {{-- Sold Progress Bar --}}
-        <div class="sold-progress mb-1.5">
-            <div class="sold-progress-bar" style="width: {{ $soldPercent }}%"></div>
-            <span class="sold-progress-text">Đã bán {{ $soldCount > 999 ? '1K+' : $soldCount }}</span>
-        </div>
+        @if($soldCount > 0)
+            <div class="sold-progress mb-1.5">
+                <div class="sold-progress-bar" style="width: {{ $soldPercent }}%"></div>
+                <span class="sold-progress-text">Đã bán {{ $soldCount > 999 ? '1K+' : $soldCount }}</span>
+            </div>
+        @endif
 
         {{-- Rating --}}
-        <div class="flex items-center gap-1 text-xs text-gray-500 mb-2">
-            <div class="star-rating text-[11px]">
-                @for($i = 1; $i <= 5; $i++)
-                    @if($i <= floor($rating))
-                        ★
-                    @elseif($i - $rating < 1)
-                        ★
-                    @else
-                        ☆
-                    @endif
-                @endfor
+        @if($hasRating)
+            <div class="flex items-center gap-1 text-xs text-gray-500 mb-2">
+                <div class="star-rating text-[11px]">
+                    @for($i = 1; $i <= 5; $i++)
+                        @if($i <= floor($rating))
+                            ★
+                        @elseif($i - $rating < 1)
+                            ★
+                        @else
+                            ☆
+                        @endif
+                    @endfor
+                </div>
+                <span>{{ number_format($rating, 1) }} ({{ $product->reviews_count }})</span>
             </div>
-            <span>{{ number_format($rating, 1) }}</span>
-        </div>
+        @else
+            <div class="flex items-center gap-1 text-xs text-gray-400 mb-2">
+                <span>Chưa có đánh giá</span>
+            </div>
+        @endif
 
         {{-- Add to Cart Button (AJAX) --}}
         @if($product->stock > 0)

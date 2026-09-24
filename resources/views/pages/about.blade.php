@@ -16,12 +16,12 @@
                 <h2 class="font-serif text-xl font-semibold text-[#3d3d3d] mb-3">2. Thông tin người bán</h2>
                 <ul class="list-disc list-inside space-y-1 ml-1">
                     <li><strong class="text-[#3d3d3d]">Tên thương hiệu:</strong> SocialShop</li>
-                    <li><strong class="text-[#3d3d3d]">Người đại diện:</strong> [cần bổ sung — tên thành viên phụ trách]</li>
+                    <li><strong class="text-[#3d3d3d]">Người đại diện:</strong> Nguyễn Thanh Luân</li>
                     <li><strong class="text-[#3d3d3d]">Trụ sở / kho hàng:</strong> 123 Đường Thời Trang, Quận 1, TP.HCM</li>
-                    <li><strong class="text-[#3d3d3d]">Điện thoại:</strong> 1900-xxxx-xxx</li>
+                    <li><strong class="text-[#3d3d3d]">Điện thoại:</strong> 077123456</li>
                     <li><strong class="text-[#3d3d3d]">Email:</strong> support@socialshop.vn</li>
                     <li><strong class="text-[#3d3d3d]">Tên miền website:</strong> {{ config('app.url') }}</li>
-                    <li><strong class="text-[#3d3d3d]">Mã số thuế / số ĐKKD:</strong> Hộ kinh doanh cá thể — thông tin MST sẽ được bổ sung khi có [cần bổ sung].</li>
+                    <li><strong class="text-[#3d3d3d]">Mã số thuế / số ĐKKD:</strong> Hộ kinh doanh cá thể — thông tin MST sẽ được bổ sung khi có.</li>
                 </ul>
             </section>
 
@@ -35,8 +35,8 @@
             <section>
                 <h2 class="font-serif text-xl font-semibold text-[#3d3d3d] mb-3">4. Kênh mạng xã hội &amp; liên hệ</h2>
                 <ul class="list-disc list-inside space-y-1 ml-1">
-                    <li>Facebook / Zalo OA: [cần bổ sung link trang]</li>
-                    <li>Hotline: 1900-xxxx-xxx (8:00–21:00 hằng ngày)</li>
+                    <li>Facebook: <a href="https://www.facebook.com/nual12th" target="_blank" rel="noopener noreferrer" class="text-[#b8847e] underline">facebook.com/nual12th</a></li>
+                    <li>Hotline: 077123456 (8:00–21:00 hằng ngày)</li>
                     <li>Email: support@socialshop.vn</li>
                 </ul>
             </section>

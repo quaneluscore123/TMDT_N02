@@ -67,6 +67,9 @@
                                         <a href="{{ route('products.show', $item->product->slug) }}"
                                            class="font-semibold text-gray-900 hover:text-[#b8847e] transition-colors line-clamp-2 text-sm">
                                             {{ $item->product->name }}
+                                            @if(!empty($item->variant_id) && !empty($item->variant))
+                                                <span class="block text-xs text-[#9a9490] font-normal mt-0.5">{{ $item->variant->label() }}</span>
+                                            @endif
                                         </a>
                                         <form action="{{ route('cart.remove') }}" method="POST" class="flex-shrink-0"
                                               onsubmit="return confirm('Xóa sản phẩm này?')">

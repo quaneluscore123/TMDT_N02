@@ -11,7 +11,7 @@ class Product extends Model
 
     protected $fillable = [
         'name', 'slug', 'sku', 'description', 'price', 'sale_price',
-        'stock', 'brand', 'status', 'category_id',
+        'stock', 'views_count', 'brand', 'status', 'category_id',
     ];
 
     protected function casts(): array
@@ -20,6 +20,7 @@ class Product extends Model
             'price' => 'integer',
             'sale_price' => 'integer',
             'stock' => 'integer',
+            'views_count' => 'integer',
         ];
     }
 
@@ -66,6 +67,16 @@ class Product extends Model
         return $this->hasMany(Review::class)->with('user')->latest();
     }
 
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function hasVariants(): bool
+    {
+        return $this->variants()->exists();
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeActive($query)
@@ -93,6 +104,7 @@ class Product extends Model
     public function getImageUrlAttribute(): ?string
     {
         $img = $this->images()->where('is_primary', true)->first() ?? $this->images()->first();
+
         return $img?->url;
     }
 

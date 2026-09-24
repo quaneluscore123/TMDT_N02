@@ -18,7 +18,7 @@ class ReviewController extends Controller
 
         $hasPurchased = $user->orders()
             ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
-            ->whereIn('status', ['delivered', 'completed'])
+            ->where('status', 'delivered')
             ->exists();
 
         if (! $hasPurchased) {
@@ -28,12 +28,12 @@ class ReviewController extends Controller
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'comment' => 'nullable|string|max:1000',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
         ], [
             'rating.required' => 'Vui lòng chọn số sao.',
             'rating.min' => 'Số sao tối thiểu là 1.',
             'rating.max' => 'Số sao tối đa là 5.',
-            'image.image' => 'File phải là hình ảnh.',
+            'image.mimes' => 'Hình ảnh phải là JPG, PNG hoặc WebP.',
             'image.max' => 'Hình ảnh tối đa 2MB.',
         ]);
 
@@ -43,7 +43,7 @@ class ReviewController extends Controller
 
         $completedOrder = $user->orders()
             ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
-            ->whereIn('status', ['delivered', 'completed'])
+            ->where('status', 'delivered')
             ->latest()
             ->first();
 

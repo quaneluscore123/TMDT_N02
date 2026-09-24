@@ -7,6 +7,7 @@ use App\Exceptions\OrderException;
 use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\BaseService;
@@ -49,26 +50,43 @@ class OrderService extends BaseService
             $productIds = $cart->items->pluck('product_id');
             $products = Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id');
 
+            $variantIds = $cart->items->pluck('variant_id')->filter();
+            $variants = ! $variantIds->isEmpty()
+                ? ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id')
+                : collect();
+
             foreach ($cart->items as $cartItem) {
                 $product = $products->get($cartItem->product_id);
+                $variant = $cartItem->variant_id
+                    ? $variants->get($cartItem->variant_id)
+                    : null;
 
                 if (! $product || $product->status !== 'active') {
                     throw new OrderException("Sản phẩm \"{$cartItem->product->name}\" hiện không còn kinh doanh.");
                 }
 
-                if ($product->stock < $cartItem->quantity) {
+                $availableStock = $variant ? $variant->stock : $product->stock;
+                $stockOwnerLabel = $variant
+                    ? $product->name.' ('.$variant->label().')'
+                    : $product->name;
+
+                if ($availableStock < $cartItem->quantity) {
                     throw new OrderException(
-                        "Sản phẩm \"{$product->name}\" chỉ còn {$product->stock} trong kho, không đủ số lượng yêu cầu."
+                        "Sản phẩm \"{$stockOwnerLabel}\" chỉ còn {$availableStock} trong kho, không đủ số lượng yêu cầu."
                     );
                 }
 
-                $lineTotal = $product->effectivePrice() * $cartItem->quantity;
+                $unitPrice = $variant ? $variant->unitPrice() : $product->effectivePrice();
+                $lineTotal = $unitPrice * $cartItem->quantity;
                 $subtotal += $lineTotal;
 
                 $itemsToCreate[] = [
                     'product_id' => $product->id,
+                    'variant_id' => $cartItem->variant_id,
                     'product_name' => $product->name,
-                    'price' => $product->effectivePrice(),
+                    'size' => $variant?->size,
+                    'color' => $variant?->color,
+                    'price' => $unitPrice,
                     'quantity' => $cartItem->quantity,
                     'subtotal' => $lineTotal,
                 ];
@@ -122,6 +140,11 @@ class OrderService extends BaseService
 
             // 8. Trừ tồn kho
             foreach ($itemsToCreate as $item) {
+                if (! empty($item['variant_id'])) {
+                    ProductVariant::where('id', $item['variant_id'])
+                        ->decrement('stock', $item['quantity']);
+                }
+
                 Product::where('id', $item['product_id'])
                     ->decrement('stock', $item['quantity']);
             }
@@ -143,7 +166,7 @@ class OrderService extends BaseService
 
             // 12. Gửi email xác nhận đơn hàng
             try {
-                Mail::to($user->email)->send(new OrderConfirmedMail($order));
+                Mail::to($user->email)->queue(new OrderConfirmedMail($order));
             } catch (\Exception $e) {
                 \Log::error('Không thể gửi email xác nhận đơn hàng: '.$e->getMessage());
             }

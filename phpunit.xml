@@ -32,5 +32,11 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="VNPAY_TMN_CODE" value="test"/>
+        <env name="VNPAY_HASH_SECRET" value="test_secret"/>
+        <env name="VNPAY_URL" value="https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"/>
+        <env name="VNPAY_RETURN_URL" value="http://localhost/payment/vnpay/return"/>
+        <env name="GEMINI_API_KEY" value=""/>
+        <env name="GEMINI_MODEL" value="gemini-1.5-flash"/>
     </php>
 </phpunit>

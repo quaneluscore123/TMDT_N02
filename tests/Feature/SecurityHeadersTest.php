@@ -18,6 +18,15 @@ class SecurityHeadersTest extends TestCase
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     }
 
+    public function test_csp_header_present(): void
+    {
+        $response = $this->get('/');
+        $response->assertOk();
+        $csp = $response->headers->get('Content-Security-Policy') ?? '';
+        $this->assertStringContainsString("default-src 'self'", $csp);
+        $this->assertStringContainsString("frame-ancestors 'self'", $csp);
+    }
+
     public function test_security_headers_on_login_page(): void
     {
         $this->get('/login')

@@ -13,10 +13,12 @@ class ProductController extends Controller
     {
         $query = Product::with('category')->where('status', 'active');
 
-        if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('name', 'like', '%'.$request->search.'%')
-                    ->orWhere('description', 'like', '%'.$request->search.'%');
+        $search = $request->input('search') ?: $request->input('q');
+
+        if ($search !== null && $search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('description', 'like', '%'.$search.'%');
             });
         }
 
@@ -127,9 +129,13 @@ class ProductController extends Controller
             abort(404);
         }
 
+        Product::whereKey($product->id)->increment('views_count');
+        $product->views_count = (int) $product->views_count + 1;
+
         $product->load([
             'category',
             'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order'),
+            'variants' => fn ($q) => $q->orderBy('size')->orderBy('color'),
         ]);
         $relatedProducts = Product::with('category')
             ->where('category_id', $product->category_id)
@@ -154,10 +160,12 @@ class ProductController extends Controller
             if (! $hasReviewed) {
                 $canReview = $user->orders()
                     ->whereHas('items', fn ($q) => $q->where('product_id', $product->id))
-                    ->whereIn('status', ['delivered', 'completed'])
+                    ->whereIn('status', ['delivered'])
                     ->exists();
             }
         }
+
+        $hasVariants = $product->variants->isNotEmpty();
 
         // SEO Meta Tags
         $metaTitle = $product->name.' - SocialShop';
@@ -178,9 +186,13 @@ class ProductController extends Controller
             ],
             'offers' => [
                 '@type' => 'Offer',
-                'price' => $product->effectivePrice() / 1000,
+                'price' => $product->effectivePrice(),
                 'priceCurrency' => 'VND',
-                'availability' => $product->stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'availability' => ($hasVariants
+                    ? $product->variants->sum('stock')
+                    : $product->stock) > 0
+                    ? 'https://schema.org/InStock'
+                    : 'https://schema.org/OutOfStock',
                 'seller' => [
                     '@type' => 'Organization',
                     'name' => 'SocialShop',
@@ -195,7 +207,7 @@ class ProductController extends Controller
 
         return view('products.show', compact(
             'product', 'relatedProducts', 'reviews', 'canReview', 'hasReviewed',
-            'metaTitle', 'metaDescription', 'metaImage', 'jsonLd'
+            'metaTitle', 'metaDescription', 'metaImage', 'jsonLd', 'hasVariants'
         ));
     }
 

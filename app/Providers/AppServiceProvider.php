@@ -31,6 +31,20 @@ class AppServiceProvider extends ServiceProvider
             );
         });
 
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinutes(1, 3)->by($request->ip());
+        });
+
+        RateLimiter::for('password', function (Request $request) {
+            return Limit::perMinutes(1, 3)->by(
+                strtolower((string) $request->input('email')).'|'.$request->ip()
+            );
+        });
+
+        RateLimiter::for('chat', function (Request $request) {
+            return Limit::perMinute(20)->by($request->user()?->id ?: $request->ip());
+        });
+
         View::composer('components.layouts.app', function ($view) {
             $view->with('navCategories', Category::query()
                 ->where('status', 'active')

@@ -40,8 +40,11 @@ class ProductSeoTest extends TestCase
 
         $response = $this->get(route('products.show', $product));
         $response->assertOk();
-
         $html = $response->getContent();
+        $this->assertStringContainsString('"priceCurrency": "VND"', $html);
+        $this->assertStringContainsString('"price": '.$product->effectivePrice(), $html);
+        $this->assertStringNotContainsString('"price": '.($product->price / 1000), $html);
+
         $this->assertStringContainsString('"@type": "Offer"', $html);
         $this->assertStringContainsString('InStock', $html);
         $this->assertStringContainsString('priceCurrency', $html);

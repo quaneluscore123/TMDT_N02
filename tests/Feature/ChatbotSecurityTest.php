@@ -21,7 +21,7 @@ class ChatbotSecurityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->chatbot = new ChatbotService();
+        $this->chatbot = new ChatbotService;
     }
 
     public function test_user_cannot_see_other_users_orders(): void
@@ -47,16 +47,16 @@ class ChatbotSecurityTest extends TestCase
         $user = User::factory()->create();
 
         $oldOrder = Order::factory()->create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'order_code' => 'ORD-20260901-0001',
-            'status'     => 'delivered',
+            'status' => 'delivered',
             'created_at' => Carbon::now()->subDays(5),
         ]);
 
         $newOrder = Order::factory()->create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'order_code' => 'ORD-20260917-0002',
-            'status'     => 'shipping',
+            'status' => 'shipping',
             'created_at' => Carbon::now(),
         ]);
 
@@ -111,9 +111,9 @@ class ChatbotSecurityTest extends TestCase
     {
         ChatbotFaq::factory()->create([
             'question' => 'Giờ mở cửa của shop?',
-            'answer'   => 'Thứ 2 đến thứ 6, 8h-17h.',
+            'answer' => 'Thứ 2 đến thứ 6, 8h-17h.',
             'keywords' => 'giờ,mở cửa,mấy giờ',
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $results = $this->chatbot->searchFaqs('mấy giờ mở cửa');
@@ -125,9 +125,9 @@ class ChatbotSecurityTest extends TestCase
     {
         ChatbotFaq::factory()->create([
             'question' => 'Về chính sách đổi trả',
-            'answer'   => 'Đổi trả trong 7 ngày.',
+            'answer' => 'Đổi trả trong 7 ngày.',
             'keywords' => 'đổi trả,return,tra hàng,đổi hàng',
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $results = $this->chatbot->searchFaqs('Tôi muốn đổi hàng');
@@ -139,7 +139,7 @@ class ChatbotSecurityTest extends TestCase
     {
         ChatbotFaq::factory()->inactive()->create([
             'question' => 'Câu hỏi đã tắt',
-            'answer'   => 'Câu trả lời đã tắt.',
+            'answer' => 'Câu trả lời đã tắt.',
         ]);
 
         $results = $this->chatbot->searchFaqs('câu hỏi đã tắt');
@@ -147,13 +147,13 @@ class ChatbotSecurityTest extends TestCase
         $this->assertEmpty($results);
     }
 
-    public function test_chat_stream_requires_auth(): void
+    public function test_chat_stream_allows_guest_with_faq_only(): void
     {
         $response = $this->postJson(route('chat.stream'), [
             'message' => 'Xin chào',
         ]);
 
-        $response->assertStatus(401);
+        $response->assertStatus(200);
     }
 
     public function test_chat_stream_works_for_authenticated_user(): void
@@ -188,9 +188,9 @@ class ChatbotSecurityTest extends TestCase
     {
         ChatbotFaq::factory()->create([
             'question' => 'Shop mở cửa mấy giờ?',
-            'answer'   => 'T2-T6, 8h-17h.',
+            'answer' => 'T2-T6, 8h-17h.',
             'keywords' => 'giờ mở cửa,mấy giờ',
-            'status'   => 'active',
+            'status' => 'active',
         ]);
 
         $context = $this->chatbot->buildContext('shop mở cửa mấy giờ');
@@ -212,9 +212,9 @@ class ChatbotSecurityTest extends TestCase
     {
         $user = User::factory()->create();
         Order::factory()->create([
-            'user_id'    => $user->id,
+            'user_id' => $user->id,
             'order_code' => 'ORD-20260917-TEST',
-            'status'     => 'shipping',
+            'status' => 'shipping',
         ]);
 
         $context = $this->chatbot->buildContext('tình trạng đơn ORD-20260917-TEST', $user->id);

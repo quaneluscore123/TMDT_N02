@@ -41,6 +41,50 @@
                         </button>
                     </form>
                 </div>
+
+                {{-- Change Password --}}
+                <div class="bg-white rounded-lg shadow p-6 mt-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Đổi mật khẩu</h2>
+
+                    @if(session('success') && request()->is('profile') === false)
+                        <div class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+
+                    <form action="{{ route('profile.password') }}" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
+                                <input type="password" name="current_password" required
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 @error('current_password') border-red-400 @enderror">
+                                @error('current_password')
+                                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                                <input type="password" name="password" required minlength="8"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2 @error('password') border-red-400 @enderror">
+                                @error('password')
+                                    <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+                                <input type="password" name="password_confirmation" required minlength="8"
+                                       class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="mt-6 bg-[#3d3d3d] text-white px-6 py-2 rounded-lg hover:bg-black transition">
+                            Đổi mật khẩu
+                        </button>
+                    </form>
+                </div>
             </div>
 
             {{-- Referral Dashboard --}}

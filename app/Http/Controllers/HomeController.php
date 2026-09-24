@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Product;
 use App\Models\Category;
-use Illuminate\Http\Request;
+use App\Models\Product;
 
 class HomeController extends Controller
 {
     public function index()
     {
+        // Nổi bật: SP đang giảm giá trước, sau đó theo giá cao (khác với "mới nhất")
         $featuredProducts = Product::with('category')
             ->where('status', 'active')
-            ->latest()
+            ->orderByRaw('CASE WHEN sale_price IS NOT NULL AND sale_price < price THEN 0 ELSE 1 END')
+            ->orderByDesc('price')
             ->limit(8)
             ->get();
 
