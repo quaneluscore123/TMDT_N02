@@ -21,7 +21,7 @@ class AuditService
         $request = request();
 
         // login_failed chưa auth được → truyền $userId tường minh
-        $resolvedUserId = $userId ?? auth()->id();
+        $resolvedUserId = $userId ?? auth()->user()?->getAuthIdentifier();
 
         if ($resolvedUserId === null && $entityType === 'User' && $entityId !== null) {
             $resolvedUserId = $entityId;

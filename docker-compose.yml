@@ -53,7 +53,7 @@ services:
     container_name: socialshop-mysql
     restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_DATABASE: social_commerce
       MYSQL_USER: social
@@ -64,11 +64,26 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent" ]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: socialshop-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8888:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: social
+      PMA_PASSWORD: social_secret
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   vite:
     image: node:22-alpine
