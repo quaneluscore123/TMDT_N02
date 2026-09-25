@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ProductImage extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'product_id',
         'image_path',
@@ -40,6 +41,10 @@ class ProductImage extends Model
     {
         if (str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
             return $this->image_path;
+        }
+
+        if (str_starts_with($this->image_path, 'images/')) {
+            return asset('storage/'.$this->image_path);
         }
 
         return asset($this->image_path);

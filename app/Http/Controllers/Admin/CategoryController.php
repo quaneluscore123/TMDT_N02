@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -74,10 +75,23 @@ class CategoryController extends Controller
 
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
 
+        $oldImage = $category->image;
+
         $category->update($validated);
+
+        if ($request->hasFile('image') && $oldImage && $oldImage !== $category->image) {
+            $this->deleteImageFile($oldImage);
+        }
 
         return redirect()->route('admin.categories.index')
             ->with('success', 'Cập nhật danh mục thành công!');
+    }
+
+    private function deleteImageFile(?string $path): void
+    {
+        if ($path && str_starts_with($path, 'categories/')) {
+            Storage::disk('public')->delete($path);
+        }
     }
 
     private function validateParent(?int $categoryId, $parentId): ?string
@@ -105,6 +119,8 @@ class CategoryController extends Controller
             return redirect()->route('admin.categories.index')
                 ->with('error', 'Không thể xóa danh mục đang có sản phẩm! Hãy chuyển sản phẩm sang danh mục khác trước.');
         }
+
+        $this->deleteImageFile($category->image);
 
         $category->delete();
 

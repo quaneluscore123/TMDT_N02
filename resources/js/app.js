@@ -1,11 +1,8 @@
 import './bootstrap';
-import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 
-window.Alpine = Alpine;
-
+// Livewire 4 đã bundle Alpine — KHÔNG import/start instance Alpine riêng
+// (instance riêng ghi đè window.Alpine → store 'cart' rơi vào instance chết).
 document.addEventListener('alpine:init', () => {
-    Alpine.plugin(collapse);
+    window.Alpine.plugin(collapse);
 });
-
-// Alpine được Livewire tự động khởi tạo nên không gọi Alpine.start() ở đây nữa

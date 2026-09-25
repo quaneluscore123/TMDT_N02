@@ -18,9 +18,17 @@
                             @foreach($products as $product)
                             <th class="p-4 bg-[#efe8e3] min-w-[200px]">
                                 <div class="text-center">
-                                    <img src="{{ $product->image_url ?? asset('images/placeholder.jpg') }}" 
-                                         alt="{{ $product->name }}" 
-                                         class="w-32 h-32 object-cover mx-auto mb-2 rounded-lg">
+                                    @if($product->image_url)
+                                        <img src="{{ $product->image_url }}"
+                                             alt="{{ $product->name }}"
+                                             class="w-32 h-32 object-cover mx-auto mb-2 rounded-lg">
+                                    @else
+                                        <div class="w-32 h-32 bg-gradient-to-br from-[#f5f0ec] to-[#efe8e3] flex items-center justify-center mx-auto mb-2 rounded-lg">
+                                            <svg class="w-10 h-10 text-[#c9a9a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                            </svg>
+                                        </div>
+                                    @endif
                                     <a href="{{ route('products.show', $product->slug) }}" 
                                        class="font-serif text-[#3d3d3d] hover:text-[#b8847e] block mb-2">
                                         {{ $product->name }}

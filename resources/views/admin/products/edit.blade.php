@@ -7,7 +7,7 @@
     </form>
 
     {{-- Gallery (Tách ra ngoài form chính để tránh lỗi form lồng nhau) --}}
-    <div class="mt-8 bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6">
+    <div id="gallery" class="mt-8 bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6 scroll-mt-20">
         <h3 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Ảnh sản phẩm</h3>
 
         {{-- Danh sách ảnh hiện tại --}}

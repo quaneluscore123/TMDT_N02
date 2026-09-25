@@ -94,6 +94,14 @@
                                             Sửa
                                         </a>
                                         @if(!$user->isAdmin() && $user->id !== auth()->id())
+                                            <form action="{{ route('admin.users.toggle-status', $user) }}" method="POST"
+                                                  onsubmit="return confirm('{{ $user->is_active ? 'Khóa tài khoản này?' : 'Kích hoạt lại tài khoản này?' }}')">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="inline-flex items-center gap-1 {{ $user->is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800' }} font-medium text-sm transition-colors">
+                                                    {{ $user->is_active ? 'Khóa' : 'Mở khóa' }}
+                                                </button>
+                                            </form>
                                             @if($user->orders_count > 0)
                                                 <span class="text-xs text-[#9a9490]" title="Có đơn hàng — chỉ được khóa">Chỉ khóa</span>
                                             @else

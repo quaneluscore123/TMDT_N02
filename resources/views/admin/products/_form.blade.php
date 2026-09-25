@@ -113,6 +113,32 @@
     {{-- Sidebar --}}
     <div class="space-y-5">
 
+        {{-- Cover image --}}
+        <div class="bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6"
+             x-data="{ preview: @js($isEdit ? ($product->image_url ?? '') : '') }">
+            <h3 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Ảnh bìa</h3>
+
+            <div x-show="preview" class="mb-3">
+                <img :src="preview" alt="Xem trước ảnh bìa"
+                     class="w-28 h-28 object-cover rounded-lg border border-[#efe8e3]">
+            </div>
+
+            <input type="file" name="image" accept="image/jpeg,image/png,image/webp"
+                   @change="
+                       const file = $event.target.files[0];
+                       if (file) {
+                           const reader = new FileReader();
+                           reader.onload = e => preview = e.target.result;
+                           reader.readAsDataURL(file);
+                       }
+                   "
+                   class="w-full border border-[#efe8e3] rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-[#c9a9a6] focus:border-transparent transition-all file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#faf7f4] file:text-[#b8847e] hover:file:bg-[#f5f0ec]">
+            @error('image')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+            <p class="text-xs text-[#9a9490] mt-2">JPG, PNG hoặc WebP, tối đa 2MB. Chọn file mới nếu muốn thay ảnh đang có; thêm nhiều ảnh khác ở khu vực "Ảnh sản phẩm" phía dưới (khi sửa).</p>
+        </div>
+
         {{-- Category + Stock --}}
         <div class="bg-white rounded-xl shadow-sm border border-[#efe8e3] p-6">
             <h3 class="font-serif text-lg font-semibold text-[#3d3d3d] mb-4">Phân loại & Kho hàng</h3>

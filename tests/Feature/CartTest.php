@@ -68,6 +68,27 @@ class CartTest extends TestCase
         return (int) array_sum(session()->get('guest_cart', []));
     }
 
+    public function test_guest_cart_merges_on_register(): void
+    {
+        $product = $this->createProduct();
+
+        $this->post('/cart/add', ['product_id' => $product->id, 'quantity' => 2]);
+        $this->post('/register', [
+            'name' => 'Người Mới',
+            'email' => 'moitai@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $user = User::where('email', 'moitai@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('carts', ['user_id' => $user->id]);
+        $this->assertDatabaseHas('cart_items', [
+            'product_id' => $product->id,
+            'quantity' => 2,
+        ]);
+    }
+
     public function test_authenticated_user_can_view_cart(): void
     {
         $user = User::factory()->create();

@@ -7,7 +7,6 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,19 +14,19 @@ class DatabaseSeeder extends Seeder
     {
         // Admin
         User::create([
-            'name'          => 'Admin',
-            'email'         => 'admin@socialshop.vn',
-            'password'      => Hash::make('password'),
-            'role'          => 'admin',
+            'name' => 'Admin',
+            'email' => 'admin@socialshop.vn',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
             'referral_code' => 'ADMIN001',
         ]);
 
         // User test
         User::create([
-            'name'          => 'Nguyễn Văn A',
-            'email'         => 'user@socialshop.vn',
-            'password'      => Hash::make('password'),
-            'role'          => 'customer',
+            'name' => 'Nguyễn Văn A',
+            'email' => 'user@socialshop.vn',
+            'password' => Hash::make('password'),
+            'role' => 'customer',
             'referral_code' => 'USER0001',
         ]);
 
@@ -42,8 +41,9 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Mỹ phẩm', 'slug' => 'my-pham', 'sort_order' => 8, 'status' => 'active'],
         ];
 
+        $createdCategoryIds = [];
         foreach ($categories as $cat) {
-            Category::create($cat);
+            $createdCategoryIds[] = Category::create($cat)->id;
         }
 
         $products = [
@@ -117,6 +117,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($products as $prod) {
+            $prod['category_id'] = $createdCategoryIds[$prod['category_id'] - 1] ?? $prod['category_id'];
             $product = Product::create($prod);
             // Also create a ProductImage record
             $imageSlug = $prod['slug'];

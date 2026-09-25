@@ -203,6 +203,10 @@
                                     window.dispatchEvent(new CustomEvent('toast', {
                                         detail: { message: 'Đã thêm vào giỏ hàng!', type: 'success' }
                                     }));
+                                } else {
+                                    window.dispatchEvent(new CustomEvent('toast', {
+                                        detail: { message: data.message || 'Không thể thêm vào giỏ hàng.', type: 'error' }
+                                    }));
                                 }
                             })
                             .catch((err) => {

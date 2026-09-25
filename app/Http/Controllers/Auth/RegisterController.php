@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Services\Auth\AuthService;
+use App\Services\Cart\CartService;
 use App\Services\Referral\ReferralService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,9 @@ class RegisterController extends Controller
 
     /**
      * Trang đăng ký
+     *
      * @group Authentication
+     *
      * @unauthenticated
      */
     public function showForm(): View
@@ -33,6 +36,7 @@ class RegisterController extends Controller
      * Tạo tài khoản mới, tự động sinh `referral_code`, đăng nhập ngay sau đó.
      *
      * @group Authentication
+     *
      * @unauthenticated
      *
      * @bodyParam name string required Họ tên. Example: Nguyễn Văn A
@@ -49,13 +53,20 @@ class RegisterController extends Controller
 
         // Ưu tiên form nhập tay, nếu form trống thì lấy từ cookie
         $referralCode = $request->input('referral_code') ?: request()->cookie(config('referral.cookie_name', 'referral_code'));
-        
+
         if ($referralCode) {
             $this->referralService->createReferral($user, $referralCode);
         }
 
         Auth::login($user);
         $request->session()->regenerate();
+
+        // Gộp giỏ guest (session) vào giỏ user — như LoginController/GoogleController
+        try {
+            app(CartService::class)->mergeGuestCart($user->id);
+        } catch (\Throwable) {
+            // không chặn đăng ký nếu merge lỗi
+        }
 
         $response = redirect()->route('home')
             ->with('success', 'Đăng ký thành công! Chào mừng bạn đến với DK Social Commerce.');

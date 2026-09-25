@@ -9,6 +9,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
     @livewireStyles
+    @stack('styles')
 </head>
 <body class="bg-gray-100 min-h-screen" x-data="{ sidebarOpen: false }">
 
@@ -182,5 +183,6 @@
     </div>
 
     @livewireScripts
+    @stack('scripts')
 </body>
 </html>
