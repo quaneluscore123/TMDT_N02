@@ -14,17 +14,17 @@
                                 </div>
                                 <span class="px-3 py-1 rounded-full text-sm font-medium
                                     @if($order->status === 'pending') bg-yellow-100 text-yellow-800
-                                    @elseif($order->status === 'processing') bg-blue-100 text-blue-800
+                                    @elseif($order->status === 'confirmed') bg-blue-100 text-blue-800
                                     @elseif($order->status === 'shipping') bg-rose-100 text-rose-800
-                                    @elseif($order->status === 'completed') bg-green-100 text-green-800
+                                    @elseif($order->status === 'delivered') bg-green-100 text-green-800
                                     @elseif($order->status === 'cancelled') bg-red-100 text-red-800
                                     @else bg-gray-100 text-gray-800
                                     @endif">
                                     @switch($order->status)
                                         @case('pending') Chờ xử lý @break
-                                        @case('processing') Đang xử lý @break
+                                        @case('confirmed') Đã xác nhận @break
                                         @case('shipping') Đang giao @break
-                                        @case('completed') Hoàn thành @break
+                                        @case('delivered') Đã giao @break
                                         @case('cancelled') Đã hủy @break
                                         @default {{ $order->status }}
                                     @endswitch

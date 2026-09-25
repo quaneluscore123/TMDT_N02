@@ -248,17 +248,43 @@ class CouponTest extends TestCase
         $this->assertEquals(900000, $order->subtotal - $order->discount + $order->shipping_fee);
     }
 
+    // ─── CouponException khi confirm → redirect lỗi, không 500 ───────────
+
+    public function test_expired_coupon_at_checkout_redirects_with_error_not_500(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->createProduct(['price' => 500000, 'stock' => 10]);
+        $this->createCoupon(['status' => 'inactive']);
+
+        $this->setupCartWithProduct($user, $product, 2);
+        $this->app['session']->put('coupon_code', 'TESTCODE');
+
+        $this->actingAs($user)->post('/checkout/review', [
+            'shipping_name' => 'Test User',
+            'shipping_phone' => '0987654321',
+            'shipping_address' => '123 Test Street',
+            'payment_method' => 'cod',
+        ])->assertRedirect(route('checkout.review.show'));
+
+        $response = $this->actingAs($user)->post('/checkout/confirm', [
+            'agree_terms' => '1',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertSame(0, Order::count());
+    }
+
     // ─── TC-08: Race condition — chỉ 1 trong 10 request thành công ────────
 
     public function test_coupon_race_condition_only_one_succeeds(): void
     {
         $coupon = $this->createCoupon(['usage_limit' => 5, 'used_count' => 4]);
 
-        $results = [];
         $threads = [];
 
         for ($i = 0; $i < 10; $i++) {
-            $threads[] = function () use ($coupon, &$results, $i) {
+            $threads[] = function () use ($coupon, $i) {
                 $user = User::factory()->create();
                 $product = $this->createProduct(['price' => 500000]);
                 $this->setupCartWithProduct($user, $product, 1);
@@ -266,31 +292,25 @@ class CouponTest extends TestCase
                 // Set coupon in session
                 $this->app['session']->put('coupon_code', $coupon->code);
 
-                try {
-                    $this->actingAs($user)->post('/checkout/review', [
-                        'shipping_name' => "User {$i}",
-                        'shipping_phone' => '0987654321',
-                        'shipping_address' => '123 Test Street',
-                        'payment_method' => 'cod',
-                    ]);
+                $this->actingAs($user)->post('/checkout/review', [
+                    'shipping_name' => "User {$i}",
+                    'shipping_phone' => '0987654321',
+                    'shipping_address' => '123 Test Street',
+                    'payment_method' => 'cod',
+                ]);
 
-                    $response = $this->actingAs($user)->post('/checkout/confirm', [
-                        'agree_terms' => '1',
-                    ]);
-
-                    $results[] = $response->status();
-                } catch (\Throwable $e) {
-                    $results[] = 500;
-                }
+                $this->actingAs($user)->post('/checkout/confirm', [
+                    'agree_terms' => '1',
+                ]);
             };
         }
 
         // Run concurrently
         collect($threads)->each(fn ($fn) => $fn());
 
-        // Only 1 should succeed (200 redirect), rest should fail
-        $successCount = collect($results)->filter(fn ($s) => $s === 302 || $s === 200)->count();
-        $this->assertLessThanOrEqual(1, $successCount);
+        // CouponException giờ được catch → redirect lỗi (302) thay vì 500;
+        // chỉ số tin cậy là số order thực sự được tạo.
+        $this->assertLessThanOrEqual(1, Order::count());
 
         // Verify used_count didn't exceed limit
         $coupon->refresh();

@@ -273,7 +273,7 @@
         </div>
 
         {{-- Reviews Section --}}
-        <div class="mt-12">
+        <div id="reviews" class="mt-12 scroll-mt-24">
             <h2 class="font-serif text-2xl font-semibold text-[#3d3d3d] mb-6">Đánh giá sản phẩm</h2>
 
             {{-- Rating Summary --}}

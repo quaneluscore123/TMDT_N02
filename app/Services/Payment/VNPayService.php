@@ -22,7 +22,7 @@ class VNPayService extends BaseService
         $vnp_OrderType = 'billpayment';
         $vnp_Amount = $order->total * 100;
         $vnp_Locale = 'vn';
-        $vnp_BankCode = 'NCB'; // Hardcode NCB để test Sandbox bỏ qua màn hình chọn
+        // Không gửi vnp_BankCode — để VNPay hiện màn hình chọn ngân hàng
         $vnp_IpAddr = $ipAddress;
 
         $inputData = [
@@ -39,10 +39,6 @@ class VNPayService extends BaseService
             'vnp_ReturnUrl' => $vnp_Returnurl,
             'vnp_TxnRef' => $vnp_TxnRef,
         ];
-
-        if (isset($vnp_BankCode) && $vnp_BankCode != '') {
-            $inputData['vnp_BankCode'] = $vnp_BankCode;
-        }
 
         ksort($inputData);
         $query = '';

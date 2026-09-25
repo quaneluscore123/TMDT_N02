@@ -20,6 +20,18 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
+        // Chrome/Edge enforce form-action trên redirect sau form POST —
+        // phải cho phép host VNPay, nếu không 302 đi sandbox sẽ bị chặn.
+        $vnpayOrigin = '';
+        $vnpayUrl = (string) config('vnpay.url');
+        if ($vnpayUrl !== '') {
+            $scheme = parse_url($vnpayUrl, PHP_URL_SCHEME);
+            $host = parse_url($vnpayUrl, PHP_URL_HOST);
+            if ($scheme && $host) {
+                $vnpayOrigin = " {$scheme}://{$host}";
+            }
+        }
+
         $csp = implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com",
@@ -29,7 +41,7 @@ class SecurityHeaders
             "connect-src 'self' https://generativelanguage.googleapis.com",
             "frame-ancestors 'self'",
             "base-uri 'self'",
-            "form-action 'self'",
+            "form-action 'self'{$vnpayOrigin}",
             "object-src 'none'",
         ]);
         $response->headers->set('Content-Security-Policy', $csp);

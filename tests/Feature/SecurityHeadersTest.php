@@ -27,6 +27,17 @@ class SecurityHeadersTest extends TestCase
         $this->assertStringContainsString("frame-ancestors 'self'", $csp);
     }
 
+    public function test_csp_form_action_allows_vnpay_redirect(): void
+    {
+        $response = $this->get('/');
+        $response->assertOk();
+        $csp = $response->headers->get('Content-Security-Policy') ?? '';
+
+        $vnpayHost = parse_url(config('vnpay.url'), PHP_URL_HOST);
+        $this->assertNotEmpty($vnpayHost);
+        $this->assertStringContainsString("form-action 'self' https://{$vnpayHost}", $csp);
+    }
+
     public function test_security_headers_on_login_page(): void
     {
         $this->get('/login')

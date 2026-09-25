@@ -25,19 +25,26 @@ class PaymentController extends Controller
                 // Cập nhật payment/order ngay trên return (idempotent — IPN vẫn xử lý nếu portal gọi)
                 $this->paymentService->processVNPayIpn($inputData);
 
+                $payment = Payment::where('transaction_code', $inputData['vnp_TxnRef'] ?? '')->first();
+
+                if ($payment && $payment->order_id) {
+                    return redirect()->route('orders.success', $payment->order_id)
+                        ->with('success', 'Thanh toán VNPay thành công!');
+                }
+
                 return view('payment.vnpay-return', [
                     'status' => 'success',
                     'message' => 'Giao dịch thành công',
                     'transactionCode' => $inputData['vnp_TxnRef'] ?? '',
                 ]);
-            } else {
-                $this->paymentService->processVNPayIpn($inputData);
-
-                return view('payment.vnpay-return', [
-                    'status' => 'error',
-                    'message' => 'Giao dịch không thành công hoặc đã bị hủy',
-                ]);
             }
+
+            $this->paymentService->processVNPayIpn($inputData);
+
+            return view('payment.vnpay-return', [
+                'status' => 'error',
+                'message' => 'Giao dịch không thành công hoặc đã bị hủy',
+            ]);
         }
 
         return view('payment.vnpay-return', [

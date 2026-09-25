@@ -158,7 +158,7 @@ class VNPayTest extends TestCase
         $this->assertSame('01', $result['RspCode']);
     }
 
-    public function test_return_url_with_valid_success_signature_updates_payment(): void
+    public function test_return_url_with_valid_success_signature_redirects_to_order_success(): void
     {
         [$payment, $order] = $this->makePaidFlowPayment(300000);
 
@@ -171,7 +171,7 @@ class VNPayTest extends TestCase
 
         $response = $this->get(route('payment.vnpay.return', $data));
 
-        $response->assertOk()->assertSee('Giao dịch thành công');
+        $response->assertRedirect(route('orders.success', $order->id));
         $this->assertSame('paid', $payment->fresh()->status);
         $this->assertSame('paid', $order->fresh()->payment_status);
     }
@@ -203,6 +203,9 @@ class VNPayTest extends TestCase
         $this->assertStringContainsString('vnp_SecureHash=', $url);
         $this->assertStringContainsString('vnp_TxnRef=VNP-URL-TEST', $url);
         $this->assertStringContainsString('vnp_TmnCode=', $url);
+
+        // Không gửi vnp_BankCode → VNPay hiện màn hình chọn ngân hàng
+        $this->assertStringNotContainsString('vnp_BankCode=', $url);
     }
     
     public function test_return_url_with_failed_response_code_shows_error(): void

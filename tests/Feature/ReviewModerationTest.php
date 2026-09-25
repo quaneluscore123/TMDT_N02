@@ -226,6 +226,129 @@ class ReviewModerationTest extends TestCase
             ->assertDontSee('Danh gia moi pending');
     }
 
+    public function test_cannot_review_before_order_is_delivered(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'shipping',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('reviews.store', $product), [
+                'rating' => 5,
+                'comment' => 'Chua nhan hang nhung van danh gia',
+            ])
+            ->assertSessionHasErrors('comment');
+
+        $this->assertDatabaseMissing('reviews', [
+            'product_id' => $product->id,
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_review_form_hidden_before_delivery(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'pending',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('products.show', $product))
+            ->assertOk()
+            ->assertDontSee('Viết đánh giá của bạn')
+            ->assertSee('Mua sản phẩm để để lại đánh giá.');
+    }
+
+    public function test_review_form_shown_after_delivery(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'delivered',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('products.show', $product))
+            ->assertOk()
+            ->assertSee('Viết đánh giá của bạn');
+    }
+
+    public function test_delivered_order_shows_review_link_on_order_page(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'delivered',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertSee('Đánh giá sản phẩm này');
+    }
+
+    public function test_order_page_has_no_review_link_before_delivery(): void
+    {
+        $user = User::factory()->create();
+        $product = $this->makeProduct();
+
+        $order = Order::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'shipping',
+        ]);
+        $order->items()->create([
+            'product_id' => $product->id,
+            'product_name' => $product->name,
+            'price' => $product->price,
+            'quantity' => 1,
+            'subtotal' => $product->price,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertDontSee('Đánh giá sản phẩm này');
+    }
+
     public function test_approve_makes_review_visible_on_product_page(): void
     {
         $product = $this->makeProduct();

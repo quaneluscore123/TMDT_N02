@@ -55,11 +55,21 @@
                                         {{ number_format($item->price, 0, ',', '.') }} ₫
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-600">{{ $item->quantity }}</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                                        {{ number_format($item->subtotal ?? $item->quantity * $item->price, 0, ',', '.') }} ₫
-                                    </td>
-                                </tr>
-                            @endforeach
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                {{ number_format($item->subtotal ?? $item->quantity * $item->price, 0, ',', '.') }} ₫
+                            </td>
+                        </tr>
+                        @if($order->status === 'delivered' && $item->product)
+                            <tr class="bg-green-50/40">
+                                <td colspan="4" class="px-6 py-2 text-right">
+                                    <a href="{{ route('products.show', $item->product) }}#reviews"
+                                       class="inline-flex items-center gap-1 text-sm font-medium text-[#b8847e] hover:text-[#a6736d] transition">
+                                        ★ Đánh giá sản phẩm này
+                                    </a>
+                                </td>
+                            </tr>
+                        @endif
+                        @endforeach
                         </tbody>
                     </table>
                 </div>

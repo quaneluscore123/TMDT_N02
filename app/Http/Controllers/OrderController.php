@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\CouponException;
 use App\Exceptions\OrderException;
 use App\Models\Coupon;
 use App\Services\Cart\CartService;
@@ -144,7 +145,7 @@ class OrderController extends Controller
             }
 
             return redirect()->route('orders.success', $order)->with('success', 'Đặt hàng thành công!');
-        } catch (OrderException $e) {
+        } catch (OrderException|CouponException $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
     }
