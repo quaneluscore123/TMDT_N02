@@ -62,7 +62,7 @@
             @error('images.*')
                 <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
             @enderror
-            <p class="text-xs text-[#9a9490] mt-3">JPG, PNG, GIF, WebP. Tối đa 2MB/ảnh. Ảnh đầu tiên sẽ trở thành ảnh chính nếu chưa có.</p>
+            <p class="text-xs text-[#9a9490] mt-3">JPG, PNG hoặc WebP. Tối đa 4MB/ảnh. Ảnh đầu tiên sẽ trở thành ảnh chính nếu chưa có.</p>
         </form>
     </div>
 

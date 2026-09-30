@@ -123,11 +123,38 @@ class AdminProductTest extends TestCase
         Storage::fake('public');
 
         $response = $this->post(route('admin.products.store'), $this->validPayload([
-            'image' => UploadedFile::fake()->create('huge.jpg', 3000),
+            'image' => UploadedFile::fake()->create('huge.jpg', 5000, 'image/jpeg'),
         ]));
 
-        $response->assertSessionHasErrors('image');
+        $response->assertSessionHasErrors(['image' => 'Hình ảnh bìa tối đa 4MB.']);
         $this->assertDatabaseMissing('products', ['name' => 'Sản phẩm test']);
+    }
+
+    public function test_admin_product_cover_image_rejects_wrong_format_with_vietnamese_message(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->post(route('admin.products.store'), $this->validPayload([
+            'image' => UploadedFile::fake()->create('animation.gif', 100, 'image/gif'),
+        ]));
+
+        $response->assertSessionHasErrors(['image' => 'Hình ảnh bìa phải là JPG, PNG hoặc WebP.']);
+        $this->assertDatabaseMissing('products', ['name' => 'Sản phẩm test']);
+    }
+
+    public function test_admin_product_cover_image_accepts_large_jpg_up_to_4mb(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->post(route('admin.products.store'), $this->validPayload([
+            'image' => UploadedFile::fake()->create('big.jpg', 3000, 'image/jpeg'),
+        ]));
+
+        $response->assertRedirect(route('admin.products.index'))
+            ->assertSessionHas('success');
+
+        $product = Product::where('name', 'Sản phẩm test')->firstOrFail();
+        Storage::disk('public')->assertExists($product->images()->firstOrFail()->image_path);
     }
 
     // ─── ProductImage URL ────────────────────────────────────────────────────

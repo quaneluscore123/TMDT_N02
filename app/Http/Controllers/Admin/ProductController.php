@@ -48,8 +48,11 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'stock' => 'required|integer|min:0',
             'brand' => 'nullable|string',
-            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:4096',
             'status' => 'sometimes|in:active,inactive',
+        ], [
+            'image.mimes' => 'Hình ảnh bìa phải là JPG, PNG hoặc WebP.',
+            'image.max' => 'Hình ảnh bìa tối đa 4MB.',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -89,8 +92,11 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'stock' => 'required|integer|min:0',
             'brand' => 'nullable|string',
-            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:2048',
+            'image' => 'nullable|mimes:jpg,jpeg,png,webp|max:4096',
             'status' => 'sometimes|in:active,inactive,out_of_stock',
+        ], [
+            'image.mimes' => 'Hình ảnh bìa phải là JPG, PNG hoặc WebP.',
+            'image.max' => 'Hình ảnh bìa tối đa 4MB.',
         ]);
 
         $validated['slug'] = Str::slug($validated['name']);
@@ -213,7 +219,12 @@ class ProductController extends Controller
     {
         $request->validate([
             'images' => 'required|array|min:1',
-            'images.*' => 'mimes:jpg,jpeg,png,webp|max:2048',
+            'images.*' => 'mimes:jpg,jpeg,png,webp|max:4096',
+        ], [
+            'images.required' => 'Vui lòng chọn ít nhất một ảnh.',
+            'images.min' => 'Vui lòng chọn ít nhất một ảnh.',
+            'images.*.mimes' => 'Ảnh sản phẩm phải là JPG, PNG hoặc WebP.',
+            'images.*.max' => 'Mỗi ảnh sản phẩm tối đa 4MB.',
         ]);
 
         $hasPrimary = $product->images()->where('is_primary', true)->exists();

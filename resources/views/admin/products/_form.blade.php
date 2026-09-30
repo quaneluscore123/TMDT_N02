@@ -136,7 +136,7 @@
             @error('image')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
-            <p class="text-xs text-[#9a9490] mt-2">JPG, PNG hoặc WebP, tối đa 2MB. Chọn file mới nếu muốn thay ảnh đang có; thêm nhiều ảnh khác ở khu vực "Ảnh sản phẩm" phía dưới (khi sửa).</p>
+            <p class="text-xs text-[#9a9490] mt-2">JPG, PNG hoặc WebP, tối đa 4MB (ảnh từ điện thoại chụp thường nặng — hãy chọn ảnh dưới 4MB). Chọn file mới nếu muốn thay ảnh đang có; thêm nhiều ảnh khác ở khu vực "Ảnh sản phẩm" phía dưới (khi sửa).</p>
         </div>
 
         {{-- Category + Stock --}}
