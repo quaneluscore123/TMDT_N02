@@ -22,8 +22,8 @@ class UpdateCartRequest extends FormRequest
     {
         return [
             'quantity.required' => 'Vui lòng nhập số lượng.',
-            'quantity.min'      => 'Số lượng phải ít nhất là 1.',
-            'quantity.max'      => 'Số lượng không được vượt quá 100.',
+            'quantity.min' => 'Số lượng phải ít nhất là 1.',
+            'quantity.max' => 'Số lượng không được vượt quá 100.',
         ];
     }
 }

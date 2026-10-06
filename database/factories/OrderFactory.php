@@ -18,7 +18,7 @@ class OrderFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'order_code' => 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'order_code' => 'ORD-'.date('Ymd').'-'.strtoupper(Str::random(4)),
             'subtotal' => fake()->numberBetween(100000, 5000000),
             'discount' => 0,
             'shipping_fee' => 30000,

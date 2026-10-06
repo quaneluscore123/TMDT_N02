@@ -18,8 +18,8 @@ class AdminCouponTest extends TestCase
         parent::setUp();
 
         $this->admin = User::factory()->create([
-            'role'     => 'admin',
-            'email'    => 'admin-coupon-test@socialshop.vn',
+            'role' => 'admin',
+            'email' => 'admin-coupon-test@socialshop.vn',
             'password' => bcrypt('password'),
         ]);
 
@@ -33,33 +33,33 @@ class AdminCouponTest extends TestCase
         $response = $this->get(route('admin.coupons.index'));
 
         $response->assertStatus(200)
-                 ->assertSee('Quản lý mã giảm giá');
+            ->assertSee('Quản lý mã giảm giá');
     }
 
     public function test_admin_can_create_coupon(): void
     {
         $data = [
-            'code'               => 'NEWCODE10',
-            'type'               => 'percent',
-            'value'              => 10,
-            'max_discount'       => 50000,
-            'min_order_amount'   => 200000,
-            'start_at'           => now()->format('Y-m-d\TH:i'),
-            'end_at'             => now()->addDays(30)->format('Y-m-d\TH:i'),
-            'usage_limit'        => 100,
-            'status'             => 'active',
+            'code' => 'NEWCODE10',
+            'type' => 'percent',
+            'value' => 10,
+            'max_discount' => 50000,
+            'min_order_amount' => 200000,
+            'start_at' => now()->format('Y-m-d\TH:i'),
+            'end_at' => now()->addDays(30)->format('Y-m-d\TH:i'),
+            'usage_limit' => 100,
+            'status' => 'active',
         ];
 
         $response = $this->post(route('admin.coupons.store'), $data);
 
         $response->assertRedirect()
-                 ->assertSessionHas('success');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseHas('coupons', [
-            'code'    => 'NEWCODE10',
-            'type'    => 'percent',
-            'value'   => 10,
-            'status'  => 'active',
+            'code' => 'NEWCODE10',
+            'type' => 'percent',
+            'value' => 10,
+            'status' => 'active',
         ]);
     }
 
@@ -68,20 +68,20 @@ class AdminCouponTest extends TestCase
         $coupon = Coupon::factory()->create(['code' => 'EDITME']);
 
         $response = $this->put(route('admin.coupons.update', $coupon), [
-            'code'             => 'EDITED',
-            'type'             => 'fixed',
-            'value'            => 25000,
+            'code' => 'EDITED',
+            'type' => 'fixed',
+            'value' => 25000,
             'min_order_amount' => 0,
-            'status'           => 'active',
+            'status' => 'active',
         ]);
 
         $response->assertRedirect()
-                 ->assertSessionHas('success');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseHas('coupons', [
-            'id'     => $coupon->id,
-            'code'   => 'EDITED',
-            'value'  => 25000,
+            'id' => $coupon->id,
+            'code' => 'EDITED',
+            'value' => 25000,
         ]);
     }
 
@@ -92,7 +92,7 @@ class AdminCouponTest extends TestCase
         $response = $this->delete(route('admin.coupons.destroy', $coupon));
 
         $response->assertRedirect()
-                 ->assertSessionHas('success');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('coupons', ['id' => $coupon->id]);
     }
@@ -104,10 +104,10 @@ class AdminCouponTest extends TestCase
         $response = $this->patch(route('admin.coupons.toggle', $coupon));
 
         $response->assertRedirect()
-                 ->assertSessionHas('success');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseHas('coupons', [
-            'id'     => $coupon->id,
+            'id' => $coupon->id,
             'status' => 'inactive',
         ]);
     }
@@ -119,7 +119,7 @@ class AdminCouponTest extends TestCase
         $response = $this->get(route('admin.coupons.usage', $coupon));
 
         $response->assertStatus(200)
-                 ->assertSee('HISTORY');
+            ->assertSee('HISTORY');
     }
 
     public function test_admin_can_bulk_delete_coupons(): void
@@ -132,7 +132,7 @@ class AdminCouponTest extends TestCase
         ]);
 
         $response->assertOk()
-                 ->assertJson(['success' => true]);
+            ->assertJson(['success' => true]);
 
         $this->assertDatabaseMissing('coupons', ['id' => $c1->id]);
         $this->assertDatabaseMissing('coupons', ['id' => $c2->id]);
@@ -149,7 +149,7 @@ class AdminCouponTest extends TestCase
         ]);
 
         $response->assertOk()
-                 ->assertJson(['success' => true]);
+            ->assertJson(['success' => true]);
 
         $this->assertDatabaseHas('coupons', ['id' => $c1->id, 'status' => 'inactive']);
         $this->assertDatabaseHas('coupons', ['id' => $c2->id, 'status' => 'inactive']);
@@ -173,6 +173,6 @@ class AdminCouponTest extends TestCase
         $response = $this->get(route('admin.coupons.index', ['search' => 'casetest']));
 
         $response->assertStatus(200)
-                 ->assertSee('CASETEST');
+            ->assertSee('CASETEST');
     }
 }

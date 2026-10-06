@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Sao lưu DB hằng ngày lúc 02:00 (cần `php artisan schedule:work` hoặc Task Scheduler)
 Schedule::command('db:backup')->dailyAt('02:00');
+
+// Hủy đơn VNPay bỏ dở để nhả tồn kho
+Schedule::command('orders:expire-unpaid')->everyFiveMinutes()->withoutOverlapping();

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -91,6 +92,24 @@ class Product extends Model
 
     // ─── Accessors / Helpers ──────────────────────────────────────────────────
 
+    /**
+     * Sinh slug không trùng ("T-Shirt" và "T Shirt" cùng ra "t-shirt" → thêm hậu tố -2, -3...).
+     */
+    public static function uniqueSlug(string $name, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($name) ?: 'san-pham';
+        $slug = $base;
+        $i = 2;
+
+        while (static::where('slug', $slug)
+            ->when($ignoreId, fn ($q) => $q->whereKeyNot($ignoreId))
+            ->exists()) {
+            $slug = $base.'-'.$i++;
+        }
+
+        return $slug;
+    }
+
     public function effectivePrice(): int
     {
         return $this->sale_price ?? $this->price;
@@ -103,18 +122,44 @@ class Product extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        $img = $this->images()->where('is_primary', true)->first() ?? $this->images()->first();
+        // Dùng quan hệ đã eager-load nếu có (tránh N+1 khi render danh sách product card)
+        if ($this->relationLoaded('images')) {
+            $img = $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+        } else {
+            $img = $this->images()->where('is_primary', true)->first() ?? $this->images()->first();
+        }
 
         return $img?->url;
     }
 
     public function getAverageRatingAttribute(): float
     {
+        if (array_key_exists('approved_rating_avg', $this->attributes)) {
+            return round((float) $this->attributes['approved_rating_avg'], 1);
+        }
+
         return round($this->reviews()->where('status', 'approved')->avg('rating') ?? 0, 1);
     }
 
-    public function getReviewsCountAttribute(): int
+    public function getReviewsCountAttribute($value): int
     {
+        if (array_key_exists('reviews_count', $this->attributes)) {
+            return (int) $value;
+        }
+
         return $this->reviews()->where('status', 'approved')->count();
+    }
+
+    /**
+     * Nạp sẵn dữ liệu cho product card (ảnh, số đánh giá đã duyệt, điểm TB) bằng 1 truy vấn gộp.
+     */
+    public function scopeWithCardData($query)
+    {
+        $approved = fn ($q) => $q->where('status', 'approved');
+
+        return $query
+            ->with('images')
+            ->withCount(['reviews as reviews_count' => $approved])
+            ->withAvg(['reviews as approved_rating_avg' => $approved], 'rating');
     }
 }

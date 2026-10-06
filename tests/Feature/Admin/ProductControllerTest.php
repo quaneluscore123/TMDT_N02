@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\User;
@@ -106,7 +107,7 @@ class ProductControllerTest extends TestCase
 
         $response->assertOk()->assertJson(['success' => true, 'status' => 'inactive']);
         $this->assertEquals('inactive', $product->fresh()->status);
-        
+
         $response2 = $this->actingAs($this->admin)->post(route('admin.products.toggle', $product));
         $response2->assertRedirect();
     }
@@ -139,5 +140,61 @@ class ProductControllerTest extends TestCase
         $response->assertRedirect();
         $this->assertModelMissing($image);
         $this->assertTrue($image2->fresh()->is_primary);
+    }
+
+    public function test_store_generates_unique_slug_for_names_that_slugify_the_same()
+    {
+        $category = Category::factory()->create();
+        $payload = ['description' => 'x', 'price' => 100000, 'category_id' => $category->id, 'stock' => 5];
+
+        $this->actingAs($this->admin)->post(route('admin.products.store'), $payload + ['name' => 'T-Shirt'])->assertRedirect();
+        $this->actingAs($this->admin)->post(route('admin.products.store'), $payload + ['name' => 'T Shirt'])->assertRedirect();
+
+        $this->assertDatabaseHas('products', ['name' => 'T-Shirt', 'slug' => 't-shirt']);
+        $this->assertDatabaseHas('products', ['name' => 'T Shirt', 'slug' => 't-shirt-2']);
+    }
+
+    public function test_update_keeps_own_slug_and_avoids_collisions()
+    {
+        $category = Category::factory()->create();
+        Product::factory()->create(['name' => 'Áo Polo', 'slug' => 'ao-polo', 'category_id' => $category->id]);
+        $product = Product::factory()->create(['name' => 'Khác', 'slug' => 'khac', 'category_id' => $category->id]);
+
+        $this->actingAs($this->admin)->put(route('admin.products.update', $product), [
+            'name' => 'Áo  Polo', 'price' => 100000, 'category_id' => $category->id, 'stock' => 1,
+        ])->assertRedirect();
+
+        $this->assertSame('ao-polo-2', $product->fresh()->slug);
+    }
+
+    public function test_destroy_sold_product_deactivates_instead_of_failing()
+    {
+        $product = Product::factory()->create(['status' => 'active']);
+        $order = Order::factory()->create();
+        $order->items()->create([
+            'product_id' => $product->id, 'product_name' => $product->name,
+            'price' => 1000, 'quantity' => 1, 'subtotal' => 1000,
+        ]);
+
+        $this->actingAs($this->admin)
+            ->delete(route('admin.products.destroy', $product))
+            ->assertRedirect(route('admin.products.index'))
+            ->assertSessionHas('error');
+
+        $this->assertModelExists($product);
+        $this->assertSame('inactive', $product->fresh()->status);
+    }
+
+    public function test_destroy_removes_uploaded_image_files()
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('images/products/a.jpg', 'x');
+        $product = Product::factory()->create();
+        ProductImage::factory()->create(['product_id' => $product->id, 'image_path' => 'images/products/a.jpg']);
+
+        $this->actingAs($this->admin)->delete(route('admin.products.destroy', $product))->assertRedirect();
+
+        $this->assertModelMissing($product);
+        Storage::disk('public')->assertMissing('images/products/a.jpg');
     }
 }

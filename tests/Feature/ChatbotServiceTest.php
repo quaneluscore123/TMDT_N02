@@ -12,7 +12,6 @@ use App\Services\ChatbotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ChatbotServiceTest extends TestCase
@@ -26,7 +25,7 @@ class ChatbotServiceTest extends TestCase
         parent::setUp();
         Config::set('services.gemini.key', 'test_api_key');
         Config::set('services.gemini.model', 'gemini-3.5-flash');
-        $this->chatbotService = new ChatbotService();
+        $this->chatbotService = new ChatbotService;
     }
 
     public function test_getters()
@@ -39,7 +38,7 @@ class ChatbotServiceTest extends TestCase
     public function test_send_message_uses_fallback_if_no_api_key()
     {
         Config::set('services.gemini.key', '');
-        $service = new ChatbotService();
+        $service = new ChatbotService;
         $response = $service->sendMessage('xin chào');
         $this->assertStringContainsString('Xin chào! Rất vui được hỗ trợ bạn', $response);
     }
@@ -47,7 +46,7 @@ class ChatbotServiceTest extends TestCase
     public function test_send_message_uses_fallback_if_test_api_key()
     {
         Config::set('services.gemini.key', 'test');
-        $service = new ChatbotService();
+        $service = new ChatbotService;
         $response = $service->sendMessage('xin chào');
         $this->assertStringContainsString('Xin chào! Rất vui được hỗ trợ bạn', $response);
     }
@@ -60,17 +59,17 @@ class ChatbotServiceTest extends TestCase
                     [
                         'content' => [
                             'parts' => [
-                                ['text' => 'Hello from Gemini!']
-                            ]
-                        ]
-                    ]
-                ]
-            ], 200)
+                                ['text' => 'Hello from Gemini!'],
+                            ],
+                        ],
+                    ],
+                ],
+            ], 200),
         ]);
 
         $response = $this->chatbotService->sendMessage('hi', [
             ['type' => 'user', 'content' => 'hello previously'],
-            ['type' => 'model', 'content' => 'hi back']
+            ['type' => 'model', 'content' => 'hi back'],
         ]);
 
         $this->assertEquals('Hello from Gemini!', $response);
@@ -79,7 +78,7 @@ class ChatbotServiceTest extends TestCase
     public function test_send_message_api_rate_limit()
     {
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response([], 429)
+            'generativelanguage.googleapis.com/*' => Http::response([], 429),
         ]);
 
         $response = $this->chatbotService->sendMessage('xin chào');
@@ -89,7 +88,7 @@ class ChatbotServiceTest extends TestCase
     public function test_send_message_api_error()
     {
         Http::fake([
-            'generativelanguage.googleapis.com/*' => Http::response([], 500)
+            'generativelanguage.googleapis.com/*' => Http::response([], 500),
         ]);
 
         $response = $this->chatbotService->sendMessage('xin chào');
@@ -110,18 +109,18 @@ class ChatbotServiceTest extends TestCase
     {
         $category = Category::factory()->create(['name' => 'Shirts']);
         Product::factory()->create(['name' => 'Áo thun', 'price' => 200000, 'category_id' => $category->id, 'status' => 'active', 'stock' => 10]);
-        
+
         ChatbotFaq::create(['question' => 'Q1', 'answer' => 'A1', 'keywords' => 'áo thun', 'sort_order' => 1, 'is_active' => true]);
 
         $user = User::factory()->create();
         $order = Order::factory()->create(['user_id' => $user->id, 'order_code' => 'ORD-12345678-ABC', 'status' => 'shipping', 'total' => 200000]);
         OrderItem::create([
-            'order_id' => $order->id, 
+            'order_id' => $order->id,
             'product_id' => 1,
-            'product_name' => 'Áo thun', 
+            'product_name' => 'Áo thun',
             'quantity' => 1,
             'price' => 200000,
-            'subtotal' => 200000
+            'subtotal' => 200000,
         ]);
 
         $context = $this->chatbotService->buildContext('tôi mua áo thun mã đơn ORD-12345678-ABC', $user->id);
@@ -162,7 +161,7 @@ class ChatbotServiceTest extends TestCase
     {
         ChatbotFaq::create(['question' => 'What?', 'answer' => 'This', 'keywords' => 'giao hàng, ship', 'sort_order' => 1, 'is_active' => true]);
         ChatbotFaq::create(['question' => 'Who?', 'answer' => 'Me', 'keywords' => 'giá, price', 'sort_order' => 2, 'is_active' => true]);
-        
+
         $faqs = $this->chatbotService->searchFaqs('hỏi về ship');
         $this->assertCount(1, $faqs);
         $this->assertEquals('What?', $faqs[0]['question']);
@@ -185,7 +184,7 @@ class ChatbotServiceTest extends TestCase
     {
         $category = Category::factory()->create(['name' => 'Shirts']);
         Product::factory()->create(['name' => 'Áo sơ mi', 'price' => 200000, 'category_id' => $category->id, 'status' => 'active', 'stock' => 10]);
-        
+
         $response = $this->chatbotService->fallbackResponse('Áo sơ mi');
         $this->assertStringContainsString('Áo sơ mi', $response);
 

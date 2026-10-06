@@ -46,7 +46,7 @@ class ReferralServiceTest extends TestCase
             'referred_user_id' => $user->id,
             'referral_code' => 'OLDCODE',
             'commission' => 0,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $this->referralService->createReferral($user, 'REF123');
@@ -66,7 +66,7 @@ class ReferralServiceTest extends TestCase
             'referral_code' => 'REF123',
             'order_id' => null,
             'status' => 'pending',
-            'commission' => 0
+            'commission' => 0,
         ]);
     }
 
@@ -85,19 +85,19 @@ class ReferralServiceTest extends TestCase
         Config::set('referral.commission_percent', 10);
         $referrer = User::factory()->create();
         $user = User::factory()->create();
-        
+
         $referral = Referral::create([
             'referrer_id' => $referrer->id,
             'referred_user_id' => $user->id,
             'referral_code' => 'TEST',
             'commission' => 0,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $order = Order::factory()->create([
             'user_id' => $user->id,
             'subtotal' => 200000,
-            'discount' => 50000, 
+            'discount' => 50000,
         ]);
 
         $this->referralService->attachOrderToReferral($order);
@@ -118,7 +118,7 @@ class ReferralServiceTest extends TestCase
             'referral_code' => 'TEST',
             'order_id' => $order->id,
             'commission' => 10000,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $this->referralService->completeReferral($order);
@@ -137,7 +137,7 @@ class ReferralServiceTest extends TestCase
             'referral_code' => 'TEST',
             'order_id' => $order->id,
             'commission' => 10000,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $this->referralService->cancelReferral($order);
@@ -155,7 +155,7 @@ class ReferralServiceTest extends TestCase
             'referred_user_id' => $user1->id,
             'referral_code' => 'TEST',
             'commission' => 50000,
-            'status' => 'completed'
+            'status' => 'completed',
         ]);
 
         Referral::create([
@@ -163,7 +163,7 @@ class ReferralServiceTest extends TestCase
             'referred_user_id' => $user2->id,
             'referral_code' => 'TEST',
             'commission' => 20000,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $stats = $this->referralService->getUserStatistics($referrer);

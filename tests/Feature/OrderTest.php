@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -181,14 +182,14 @@ class OrderTest extends TestCase
     public function test_user_can_view_order_details(): void
     {
         $user = User::factory()->create();
-        $order = \App\Models\Order::factory()->create(['user_id' => $user->id]);
+        $order = Order::factory()->create(['user_id' => $user->id]);
         $this->actingAs($user)->get("/orders/{$order->id}")->assertOk()->assertViewIs('orders.show');
     }
 
     public function test_user_can_view_order_success_page(): void
     {
         $user = User::factory()->create();
-        $order = \App\Models\Order::factory()->create(['user_id' => $user->id]);
+        $order = Order::factory()->create(['user_id' => $user->id]);
         $this->actingAs($user)->get("/orders/{$order->id}/success")->assertOk()->assertViewIs('orders.success');
     }
 
@@ -204,18 +205,18 @@ class OrderTest extends TestCase
         $product = $this->createProduct();
         $this->fillCart($user, $product, 1, 100000);
         $this->actingAs($user)
-             ->withSession([
-                 'checkout' => [
-                     'payment_method' => 'cod',
-                     'shipping_name' => 'Name',
-                     'shipping_phone' => 'Phone',
-                     'shipping_address' => 'Address'
-                 ], 
-                 'coupon_code' => 'INVALID'
-             ])
-             ->get('/checkout/review')
-             ->assertOk();
-             
+            ->withSession([
+                'checkout' => [
+                    'payment_method' => 'cod',
+                    'shipping_name' => 'Name',
+                    'shipping_phone' => 'Phone',
+                    'shipping_address' => 'Address',
+                ],
+                'coupon_code' => 'INVALID',
+            ])
+            ->get('/checkout/review')
+            ->assertOk();
+
         $this->assertNull(session('coupon_code'));
     }
 
@@ -226,7 +227,7 @@ class OrderTest extends TestCase
         $this->fillCart($user, $product, 1, 200000);
 
         $this->postReview($user, ['payment_method' => 'vnpay'])->assertRedirect();
-        
+
         $response = $this->postConfirm($user);
         $response->assertRedirect();
         $this->assertStringContainsString('vnpay', $response->headers->get('Location'));

@@ -247,7 +247,7 @@ class AuditLogTest extends TestCase
         $response = $this->actingAs($admin)
             ->get('/admin/audit-logs?action=test_action_B')
             ->assertOk();
-            
+
         $response->assertViewHas('logs', function ($logs) {
             return $logs->count() === 1 && $logs->first()->action === 'test_action_B';
         });
@@ -271,7 +271,7 @@ class AuditLogTest extends TestCase
         $response = $this->actingAs($admin)
             ->get('/admin/audit-logs?search=192.168')
             ->assertOk();
-            
+
         $response->assertViewHas('logs', function ($logs) {
             return $logs->count() === 1 && $logs->first()->action === 'search_action_A';
         });

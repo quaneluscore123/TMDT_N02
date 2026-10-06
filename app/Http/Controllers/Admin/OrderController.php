@@ -3,20 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Mail\OrderStatusChangedMail;
-use App\Models\CouponUsage;
 use App\Models\Order;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Services\AuditService;
+use App\Services\Order\OrderService;
 use App\Services\Referral\ReferralService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
 
 class OrderController extends Controller
 {
     public function __construct(
-        private ReferralService $referralService
+        private ReferralService $referralService,
+        private OrderService $orderService
     ) {}
 
     public function index(Request $request)
@@ -32,6 +29,10 @@ class OrderController extends Controller
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
+        }
+
+        if ($paymentStatus = $request->input('payment_status')) {
+            $query->where('payment_status', $paymentStatus);
         }
 
         $orders = $query->latest()->paginate(15)->withQueryString();
@@ -53,36 +54,38 @@ class OrderController extends Controller
         ]);
 
         $oldStatus = $order->status;
+        $newStatus = $validated['status'];
 
-        if ($oldStatus === 'cancelled' && $validated['status'] !== 'cancelled') {
+        if ($oldStatus === 'cancelled' && $newStatus !== 'cancelled') {
             // Không cho reopen đơn đã hủy (đã hoàn kho) — tránh hoàn kho 2 lần
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Không thể mở lại đơn đã hủy.'], 422);
+            return $this->reject($request, 'Không thể mở lại đơn đã hủy.');
+        }
+
+        // Đơn thanh toán online chưa nhận tiền thì không được xác nhận/giao
+        if ($order->payment_method !== 'cod'
+            && $order->payment_status !== 'paid'
+            && in_array($newStatus, ['confirmed', 'shipping', 'delivered'], true)) {
+            return $this->reject($request, 'Đơn thanh toán online chưa được thanh toán — không thể xác nhận/giao hàng.');
+        }
+
+        if ($newStatus === 'cancelled') {
+            $this->orderService->cancelOrder($order, 'admin');
+        } elseif ($newStatus !== $oldStatus) {
+            $order->update(['status' => $newStatus]);
+
+            AuditService::log('order_status_changed', 'Order', $order->id, [
+                'from' => $oldStatus,
+                'to' => $newStatus,
+            ]);
+
+            if ($newStatus === 'delivered') {
+                $this->referralService->completeReferral($order);
             }
 
-            return back()->with('error', 'Không thể mở lại đơn đã hủy.');
+            $this->orderService->notifyStatusChanged($order, $oldStatus);
         }
 
-        $order->update(['status' => $validated['status']]);
-
-        AuditService::log('order_status_changed', 'Order', $order->id, [
-            'from' => $oldStatus,
-            'to' => $validated['status'],
-        ]);
-
-        if ($validated['status'] === 'delivered') {
-            $this->referralService->completeReferral($order);
-        } elseif ($validated['status'] === 'cancelled' && $oldStatus !== 'cancelled') {
-            $this->referralService->cancelReferral($order);
-            $this->restoreStockAndCoupon($order);
-        }
-
-        // Gửi email thông báo thay đổi trạng thái
-        try {
-            Mail::to($order->user->email)->queue(new OrderStatusChangedMail($order, $oldStatus));
-        } catch (\Exception $e) {
-            \Log::error('Không thể gửi email cập nhật đơn hàng: '.$e->getMessage());
-        }
+        $order->refresh();
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -94,22 +97,12 @@ class OrderController extends Controller
         return back()->with('success', 'Cập nhật trạng thái thành công!');
     }
 
-    private function restoreStockAndCoupon(Order $order): void
+    private function reject(Request $request, string $message)
     {
-        foreach ($order->items as $item) {
-            if ($item->variant_id) {
-                ProductVariant::where('id', $item->variant_id)
-                    ->increment('stock', $item->quantity);
-            }
-
-            Product::where('id', $item->product_id)
-                ->increment('stock', $item->quantity);
+        if ($request->wantsJson()) {
+            return response()->json(['success' => false, 'message' => $message], 422);
         }
 
-        $usage = CouponUsage::where('order_id', $order->id)->first();
-        if ($usage) {
-            $usage->coupon?->decrement('used_count');
-            $usage->delete();
-        }
+        return back()->with('error', $message);
     }
 }

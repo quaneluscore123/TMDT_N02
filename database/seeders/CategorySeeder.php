@@ -40,20 +40,20 @@ class CategorySeeder extends Seeder
 
         foreach ($categories as $data) {
             $parent = Category::create([
-                'name'       => $data['name'],
-                'slug'       => $data['slug'],
-                'parent_id'  => null,
+                'name' => $data['name'],
+                'slug' => $data['slug'],
+                'parent_id' => null,
                 'sort_order' => 0,
-                'status'     => 'active',
+                'status' => 'active',
             ]);
 
             foreach ($data['children'] as $i => $childName) {
                 Category::create([
-                    'name'       => $childName,
-                    'slug'       => Str::slug($childName) . '-' . $parent->id,
-                    'parent_id'  => $parent->id,
+                    'name' => $childName,
+                    'slug' => Str::slug($childName).'-'.$parent->id,
+                    'parent_id' => $parent->id,
                     'sort_order' => $i + 1,
-                    'status'     => 'active',
+                    'status' => 'active',
                 ]);
             }
         }

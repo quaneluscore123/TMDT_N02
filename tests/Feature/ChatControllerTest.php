@@ -3,14 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Services\ChatbotService;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ChatControllerTest extends TestCase
@@ -25,8 +20,10 @@ class ChatControllerTest extends TestCase
 
     private function getStreamContent($response)
     {
-        $prevHandler = set_error_handler(function () { return true; }, E_NOTICE | E_WARNING);
-        
+        $prevHandler = set_error_handler(function () {
+            return true;
+        }, E_NOTICE | E_WARNING);
+
         try {
             $response->sendContent();
         } finally {
@@ -35,7 +32,7 @@ class ChatControllerTest extends TestCase
             } else {
                 restore_error_handler();
             }
-            
+
             while (ob_get_level() < 1) {
                 ob_start();
             }
@@ -47,39 +44,37 @@ class ChatControllerTest extends TestCase
         $response = $this->postJson('/chat/stream', ['message' => 'hello']);
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
-        
+
         $this->getStreamContent($response);
     }
 
     public function test_stream_user_with_empty_api_key_uses_fallback()
     {
         Config::set('services.gemini.key', '');
-        
+
         $user = User::factory()->create();
         $this->actingAs($user);
 
         $response = $this->postJson('/chat/stream', ['message' => 'hello']);
         $response->assertStatus(200);
-        
+
         $this->getStreamContent($response);
     }
 
     public function test_stream_user_gemini_api_error()
     {
         Config::set('services.gemini.key', 'valid_api_key');
-        
+
         $user = User::factory()->create();
         $this->actingAs($user);
-        
-        \Illuminate\Support\Facades\Http::fake([
-            '*' => \Illuminate\Support\Facades\Http::response('', 500)
+
+        Http::fake([
+            '*' => Http::response('', 500),
         ]);
-        
+
         $response = $this->postJson('/chat/stream', ['message' => 'hello']);
         $response->assertStatus(200);
-        
+
         $this->getStreamContent($response);
     }
-
-
 }

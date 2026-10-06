@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -157,12 +158,12 @@ class CartTest extends TestCase
     {
         $product = $this->createProduct();
         $this->post('/cart/add', ['product_id' => $product->id, 'quantity' => 1]);
-        
+
         $this->post('/cart/update', [
             'rowId' => $product->id,
-            'quantity' => 5
+            'quantity' => 5,
         ])->assertRedirect();
-        
+
         $this->assertEquals(5, session('guest_cart')[$product->id]);
     }
 
@@ -171,14 +172,14 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         $product = $this->createProduct();
         $this->actingAs($user)->post('/cart/add', ['product_id' => $product->id, 'quantity' => 1]);
-        
+
         $cartItem = Cart::where('user_id', $user->id)->first()->items()->first();
-        
+
         $this->post('/cart/update', [
             'rowId' => $cartItem->id,
-            'quantity' => 5
+            'quantity' => 5,
         ])->assertRedirect();
-        
+
         $this->assertDatabaseHas('cart_items', ['id' => $cartItem->id, 'quantity' => 5]);
     }
 
@@ -202,23 +203,23 @@ class CartTest extends TestCase
     {
         $product = $this->createProduct();
         $this->postJson('/cart/add', ['product_id' => $product->id, 'quantity' => 1])
-             ->assertSuccessful()
-             ->assertJson(['success' => true]);
-             
+            ->assertSuccessful()
+            ->assertJson(['success' => true]);
+
         $user = User::factory()->create();
         $this->actingAs($user)->postJson('/cart/add', ['product_id' => $product->id, 'quantity' => 1])
-             ->assertSuccessful()
-             ->assertJson(['success' => true]);
+            ->assertSuccessful()
+            ->assertJson(['success' => true]);
     }
 
     public function test_add_invalid_variant(): void
     {
         $product = $this->createProduct();
         $this->post('/cart/add', ['product_id' => $product->id, 'variant_id' => 9999, 'quantity' => 1])
-             ->assertRedirect(); // error
-             
+            ->assertRedirect(); // error
+
         $this->postJson('/cart/add', ['product_id' => $product->id, 'variant_id' => 9999, 'quantity' => 1])
-             ->assertStatus(422);
+            ->assertStatus(422);
     }
 
     public function test_checkout_redirects_guest(): void
@@ -237,7 +238,7 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         $product = $this->createProduct();
         $this->actingAs($user)->post('/cart/add', ['product_id' => $product->id, 'quantity' => 1]);
-        
+
         $this->get('/checkout')->assertSuccessful()->assertViewIs('checkout.index');
     }
 
@@ -246,19 +247,19 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         $product = $this->createProduct();
         $this->actingAs($user)->post('/cart/add', ['product_id' => $product->id, 'quantity' => 1]);
-        
-        \App\Models\Coupon::forceCreate([
+
+        Coupon::forceCreate([
             'code' => 'TEST50',
             'type' => 'fixed',
             'value' => 50000,
             'min_order_amount' => 0,
             'status' => 'active',
             'usage_limit' => 10,
-            'used_count' => 0
+            'used_count' => 0,
         ]);
-        
+
         session()->put('coupon_code', 'TEST50');
-        
+
         $this->get('/checkout')->assertSuccessful()->assertViewHas('discount', 50000);
     }
 
@@ -267,12 +268,12 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         $product = $this->createProduct(['stock' => 5]);
         $this->actingAs($user)->post('/cart/add', ['product_id' => $product->id, 'quantity' => 1]);
-        
+
         $cartItem = Cart::where('user_id', $user->id)->first()->items()->first();
-        
+
         $this->post('/cart/update', [
             'rowId' => $cartItem->id,
-            'quantity' => 100 // Exceeds stock
+            'quantity' => 100, // Exceeds stock
         ])->assertRedirect()->assertSessionHas('error');
     }
 }

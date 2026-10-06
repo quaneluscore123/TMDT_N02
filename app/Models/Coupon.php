@@ -10,6 +10,7 @@ use Illuminate\Support\Carbon;
 class Coupon extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'code',
         'type',
@@ -26,13 +27,13 @@ class Coupon extends Model
     protected function casts(): array
     {
         return [
-            'value'            => 'integer',
+            'value' => 'integer',
             'min_order_amount' => 'integer',
-            'max_discount'     => 'integer',
-            'usage_limit'      => 'integer',
-            'used_count'       => 'integer',
-            'start_at'         => 'datetime',
-            'end_at'           => 'datetime',
+            'max_discount' => 'integer',
+            'usage_limit' => 'integer',
+            'used_count' => 'integer',
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
         ];
     }
 
@@ -67,6 +68,7 @@ class Coupon extends Model
             if ($this->max_discount !== null) {
                 $discount = min($discount, $this->max_discount);
             }
+
             return $discount;
         }
 

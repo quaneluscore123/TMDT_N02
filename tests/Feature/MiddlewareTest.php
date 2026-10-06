@@ -5,11 +5,11 @@ namespace Tests\Feature;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\TrackReferral;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Config;
 
 class MiddlewareTest extends TestCase
 {
@@ -21,7 +21,7 @@ class MiddlewareTest extends TestCase
         $this->actingAs($admin);
 
         $request = Request::create('/admin', 'GET');
-        $middleware = new IsAdmin();
+        $middleware = new IsAdmin;
 
         $response = $middleware->handle($request, function () {
             return response('OK');
@@ -36,7 +36,7 @@ class MiddlewareTest extends TestCase
         $this->actingAs($user);
 
         $request = Request::create('/admin', 'GET');
-        $middleware = new IsAdmin();
+        $middleware = new IsAdmin;
 
         $this->expectException(HttpException::class);
         $this->expectExceptionMessage('Bạn không có quyền truy cập trang này.');
@@ -47,7 +47,7 @@ class MiddlewareTest extends TestCase
     public function test_is_admin_middleware_aborts_guest()
     {
         $request = Request::create('/admin', 'GET');
-        $middleware = new IsAdmin();
+        $middleware = new IsAdmin;
 
         $this->expectException(HttpException::class);
         $this->expectExceptionMessage('Bạn không có quyền truy cập trang này.');
@@ -61,7 +61,7 @@ class MiddlewareTest extends TestCase
         Config::set('referral.cookie_name', 'ref_cookie');
 
         $request = Request::create('/?ref=REF123', 'GET');
-        $middleware = new TrackReferral();
+        $middleware = new TrackReferral;
 
         $response = $middleware->handle($request, function () {
             return response('OK');
@@ -76,7 +76,7 @@ class MiddlewareTest extends TestCase
     public function test_track_referral_middleware_ignores_invalid_code()
     {
         $request = Request::create('/?ref=INVALID', 'GET');
-        $middleware = new TrackReferral();
+        $middleware = new TrackReferral;
 
         $response = $middleware->handle($request, function () {
             return response('OK');
@@ -89,7 +89,7 @@ class MiddlewareTest extends TestCase
     public function test_track_referral_middleware_ignores_missing_code()
     {
         $request = Request::create('/', 'GET');
-        $middleware = new TrackReferral();
+        $middleware = new TrackReferral;
 
         $response = $middleware->handle($request, function () {
             return response('OK');

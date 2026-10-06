@@ -135,5 +135,8 @@ class DatabaseSeeder extends Seeder
 
         // Chatbot FAQs
         $this->call(ChatbotFaqSeeder::class);
+
+        // Đơn hàng + đánh giá demo (dashboard doanh thu, hàng đợi kiểm duyệt)
+        $this->call(DemoOrderSeeder::class);
     }
 }

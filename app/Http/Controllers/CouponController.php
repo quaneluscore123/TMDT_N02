@@ -26,8 +26,8 @@ class CouponController extends Controller
         ]);
 
         try {
-            $user    = Auth::user();
-            $cart    = $this->cartService->getCartWithItems($user->id);
+            $user = Auth::user();
+            $cart = $this->cartService->getCartWithItems($user->id);
             $subtotal = $cart->totalPrice();
 
             $result = $this->couponService->applyCoupon(
@@ -39,10 +39,10 @@ class CouponController extends Controller
             session()->put('coupon_code', $result['code']);
 
             return response()->json([
-                'success'  => true,
+                'success' => true,
                 'discount' => $result['discount'],
-                'code'     => $result['code'],
-                'message'  => $result['message'],
+                'code' => $result['code'],
+                'message' => $result['message'],
             ]);
         } catch (CouponException $e) {
             session()->forget('coupon_code');

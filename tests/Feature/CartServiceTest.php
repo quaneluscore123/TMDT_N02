@@ -50,12 +50,12 @@ class CartServiceTest extends TestCase
         $product = Product::factory()->create(['stock' => 10, 'price' => 1000, 'status' => 'active']);
 
         $item = $this->cartService->addItem($user->id, $product->id, 2);
-        
+
         $this->assertEquals(2, $item->quantity);
         $this->assertEquals($product->effectivePrice(), $item->price);
         $this->assertDatabaseHas('cart_items', [
             'product_id' => $product->id,
-            'quantity' => 2
+            'quantity' => 2,
         ]);
     }
 
@@ -68,11 +68,11 @@ class CartServiceTest extends TestCase
             'sku' => 'TEST-SKU',
             'attributes' => ['color' => 'Red'],
             'stock' => 5,
-            'price_modifier' => 200
+            'price_modifier' => 200,
         ]);
 
         $item = $this->cartService->addItem($user->id, $product->id, 1, $variant->id);
-        
+
         $this->assertEquals(1, $item->quantity);
         $this->assertEquals($variant->unitPrice(), $item->price);
         $this->assertEquals($variant->id, $item->variant_id);
@@ -96,7 +96,7 @@ class CartServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $item = $this->cartService->updateItem($user->id, $cartItem->id, 5);
@@ -112,7 +112,7 @@ class CartServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->expectException(CartException::class);
@@ -128,7 +128,7 @@ class CartServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->cartService->removeItem($user->id, $cartItem->id);
@@ -144,7 +144,7 @@ class CartServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->cartService->clearCart($user->id);
@@ -162,7 +162,7 @@ class CartServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 3,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->assertEquals(3, $this->cartService->getItemCount($user->id));
@@ -174,9 +174,9 @@ class CartServiceTest extends TestCase
     {
         Session::start();
         $product = Product::factory()->create(['stock' => 10, 'status' => 'active']);
-        
+
         $this->cartService->addGuestItem($product->id, 2);
-        
+
         $cart = session()->get('guest_cart');
         $this->assertArrayHasKey((string) $product->id, $cart);
         $this->assertEquals(2, $cart[(string) $product->id]);
@@ -186,7 +186,7 @@ class CartServiceTest extends TestCase
     {
         Session::start();
         $product = Product::factory()->create(['stock' => 1, 'status' => 'active']);
-        
+
         $this->expectException(CartException::class);
         $this->cartService->addGuestItem($product->id, 2);
     }
@@ -196,7 +196,7 @@ class CartServiceTest extends TestCase
         Session::start();
         $product = Product::factory()->create(['stock' => 10, 'status' => 'active']);
         session()->put('guest_cart', [(string) $product->id => 1]);
-        
+
         $this->cartService->updateGuestItem((string) $product->id, 5);
         $this->assertEquals(5, session('guest_cart')[(string) $product->id]);
     }
@@ -213,7 +213,7 @@ class CartServiceTest extends TestCase
         Session::start();
         $product = Product::factory()->create(['stock' => 5, 'status' => 'active']);
         session()->put('guest_cart', [(string) $product->id => 1]);
-        
+
         $this->expectException(CartException::class);
         $this->cartService->updateGuestItem((string) $product->id, 10);
     }
@@ -246,28 +246,28 @@ class CartServiceTest extends TestCase
         Session::start();
         $product = Product::factory()->create(['status' => 'active', 'price' => 1000]);
         $variant = ProductVariant::create([
-            'product_id' => $product->id, 
+            'product_id' => $product->id,
             'sku' => 'TEST-SKU-2',
             'attributes' => ['size' => 'L'],
             'stock' => 10,
-            'price_modifier' => 500
+            'price_modifier' => 500,
         ]);
-        
+
         session()->put('guest_cart', [
             (string) $product->id => 2,
-            $product->id . ':' . $variant->id => 1,
-            '999' => 1 // Non-existent product should be ignored
+            $product->id.':'.$variant->id => 1,
+            '999' => 1, // Non-existent product should be ignored
         ]);
 
         $items = $this->cartService->getGuestCartItems();
 
         $this->assertCount(2, $items);
-        
+
         $item1 = $items->firstWhere('id', (string) $product->id);
         $this->assertNotNull($item1);
         $this->assertEquals(2, $item1->quantity);
-        
-        $item2 = $items->firstWhere('id', $product->id . ':' . $variant->id);
+
+        $item2 = $items->firstWhere('id', $product->id.':'.$variant->id);
         $this->assertNotNull($item2);
         $this->assertEquals(1, $item2->quantity);
     }
@@ -283,14 +283,14 @@ class CartServiceTest extends TestCase
         Session::start();
         $user = User::factory()->create();
         $product = Product::factory()->create(['stock' => 10, 'status' => 'active']);
-        
+
         session()->put('guest_cart', [(string) $product->id => 2]);
 
         $this->cartService->mergeGuestCart($user->id);
 
         $this->assertDatabaseHas('cart_items', [
             'product_id' => $product->id,
-            'quantity' => 2
+            'quantity' => 2,
         ]);
         $this->assertNull(session('guest_cart'));
     }

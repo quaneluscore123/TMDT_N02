@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\User;
 use App\Services\Payment\PaymentService;
 use App\Services\Payment\VNPayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,12 +14,13 @@ class PaymentServiceTest extends TestCase
     use RefreshDatabase;
 
     private PaymentService $paymentService;
+
     private $vnpayMock;
 
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->vnpayMock = $this->mock(VNPayService::class);
         $this->paymentService = app(PaymentService::class);
     }
@@ -38,7 +38,7 @@ class PaymentServiceTest extends TestCase
     public function test_create_payment_vnpay()
     {
         $order = Order::factory()->create(['payment_method' => 'vnpay', 'total' => 100000]);
-        
+
         $this->vnpayMock->shouldReceive('buildPaymentUrl')
             ->once()
             ->andReturn('https://vnpay.test/pay');
@@ -54,10 +54,10 @@ class PaymentServiceTest extends TestCase
     {
         // Dùng make thay vì create vì DB có check constraint không cho tạo paypal
         $order = Order::factory()->make(['id' => 999, 'payment_method' => 'paypal']);
-        
+
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Unsupported payment method');
-        
+
         $this->paymentService->createPayment($order, '127.0.0.1');
     }
 
@@ -86,14 +86,14 @@ class PaymentServiceTest extends TestCase
             'transaction_code' => 'TXN123',
             'amount' => 100000,
             'method' => 'vnpay',
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $result = $this->paymentService->processVNPayIpn([
             'vnp_TxnRef' => 'TXN123',
-            'vnp_Amount' => 50000 * 100 // Wrong amount
+            'vnp_Amount' => 50000 * 100, // Wrong amount
         ]);
-        
+
         $this->assertEquals('04', $result['RspCode']);
     }
 
@@ -106,14 +106,14 @@ class PaymentServiceTest extends TestCase
             'transaction_code' => 'TXN123',
             'amount' => 100000,
             'method' => 'vnpay',
-            'status' => 'paid' // Already processed
+            'status' => 'paid', // Already processed
         ]);
 
         $result = $this->paymentService->processVNPayIpn([
             'vnp_TxnRef' => 'TXN123',
-            'vnp_Amount' => 100000 * 100
+            'vnp_Amount' => 100000 * 100,
         ]);
-        
+
         $this->assertEquals('02', $result['RspCode']);
     }
 
@@ -126,15 +126,15 @@ class PaymentServiceTest extends TestCase
             'transaction_code' => 'TXN123',
             'amount' => 100000,
             'method' => 'vnpay',
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $result = $this->paymentService->processVNPayIpn([
             'vnp_TxnRef' => 'TXN123',
             'vnp_Amount' => 100000 * 100,
-            'vnp_ResponseCode' => '00'
+            'vnp_ResponseCode' => '00',
         ]);
-        
+
         $this->assertEquals('00', $result['RspCode']);
         $this->assertEquals('paid', $payment->fresh()->status);
         $this->assertEquals('paid', $order->fresh()->payment_status);
@@ -149,15 +149,15 @@ class PaymentServiceTest extends TestCase
             'transaction_code' => 'TXN123',
             'amount' => 100000,
             'method' => 'vnpay',
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $result = $this->paymentService->processVNPayIpn([
             'vnp_TxnRef' => 'TXN123',
             'vnp_Amount' => 100000 * 100,
-            'vnp_ResponseCode' => '24' // Failed by bank
+            'vnp_ResponseCode' => '24', // Failed by bank
         ]);
-        
+
         $this->assertEquals('00', $result['RspCode']); // Still returns 00 to acknowledge
         $this->assertEquals('failed', $payment->fresh()->status);
     }

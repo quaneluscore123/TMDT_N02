@@ -60,14 +60,14 @@ class AuthServiceTest extends TestCase
 
         $success = $this->authService->login([
             'email' => 'test@example.com',
-            'password' => 'password123'
+            'password' => 'password123',
         ]);
 
         $this->assertTrue($success);
         $this->assertEquals($user->id, Auth::id());
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'login_success',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
     }
 
@@ -80,14 +80,14 @@ class AuthServiceTest extends TestCase
 
         $success = $this->authService->login([
             'email' => 'test@example.com',
-            'password' => 'wrongpassword'
+            'password' => 'wrongpassword',
         ]);
 
         $this->assertFalse($success);
         $this->assertNull(Auth::user());
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'login_failed',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
     }
 
@@ -101,13 +101,13 @@ class AuthServiceTest extends TestCase
 
         $success = $this->authService->login([
             'email' => 'test@example.com',
-            'password' => 'password123'
+            'password' => 'password123',
         ]);
 
         $this->assertFalse($success);
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'login_blocked',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
     }
 
@@ -138,7 +138,7 @@ class AuthServiceTest extends TestCase
         $this->assertNull(Auth::user());
         $this->assertDatabaseHas('audit_logs', [
             'action' => 'logout',
-            'user_id' => $user->id
+            'user_id' => $user->id,
         ]);
     }
 
@@ -192,7 +192,7 @@ class AuthServiceTest extends TestCase
     {
         $existing = User::factory()->create([
             'email' => 'google@example.com',
-            'referral_code' => null
+            'referral_code' => null,
         ]);
 
         $googleUser = $this->getMockBuilder(SocialiteUser::class)

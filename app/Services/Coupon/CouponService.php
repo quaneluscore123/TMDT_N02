@@ -21,7 +21,7 @@ class CouponService extends BaseService
     {
         $coupon = Coupon::where('code', $code)->first();
 
-        if (!$coupon) {
+        if (! $coupon) {
             throw new CouponException('Mã giảm giá không hợp lệ.');
         }
 
@@ -30,11 +30,11 @@ class CouponService extends BaseService
         $discount = $coupon->calculateDiscount($subtotal);
 
         return [
-            'code'     => $coupon->code,
+            'code' => $coupon->code,
             'discount' => $discount,
-            'type'     => $coupon->type,
-            'value'    => $coupon->value,
-            'message'  => "Áp dụng mã {$coupon->code} thành công!",
+            'type' => $coupon->type,
+            'value' => $coupon->value,
+            'message' => "Áp dụng mã {$coupon->code} thành công!",
         ];
     }
 
@@ -43,13 +43,14 @@ class CouponService extends BaseService
      * Dùng trong OrderService::placeOrder().
      *
      * @return array{coupon: Coupon, discount: int}
+     *
      * @throws CouponException
      */
     public function validateAndCalculate(string $code, int $subtotal, User $user): array
     {
         $coupon = Coupon::where('code', $code)->lockForUpdate()->first();
 
-        if (!$coupon) {
+        if (! $coupon) {
             throw new CouponException('Mã giảm giá không hợp lệ.');
         }
 
@@ -58,7 +59,7 @@ class CouponService extends BaseService
         $discount = $coupon->calculateDiscount($subtotal);
 
         return [
-            'coupon'   => $coupon,
+            'coupon' => $coupon,
             'discount' => $discount,
         ];
     }
@@ -73,8 +74,8 @@ class CouponService extends BaseService
 
         CouponUsage::create([
             'coupon_id' => $coupon->id,
-            'user_id'   => $user->id,
-            'order_id'  => $order->id,
+            'user_id' => $user->id,
+            'order_id' => $order->id,
         ]);
     }
 
@@ -106,7 +107,7 @@ class CouponService extends BaseService
 
         // 4. Min order amount
         if ($subtotal < $coupon->min_order_amount) {
-            $minFormatted = number_format($coupon->min_order_amount, 0, ',', '.') . '₫';
+            $minFormatted = number_format($coupon->min_order_amount, 0, ',', '.').'₫';
             throw new CouponException("Đơn hàng chưa đạt giá trị tối thiểu {$minFormatted} để sử dụng mã này.");
         }
 

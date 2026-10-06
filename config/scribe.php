@@ -34,7 +34,7 @@ return [
             'match' => [
                 // Quét toàn bộ web routes (không chỉ api/)
                 'prefixes' => ['*'],
-                'domains'  => ['*'],
+                'domains' => ['*'],
             ],
             'include' => [],
             'exclude' => [
@@ -65,7 +65,8 @@ return [
 
     'laravel' => [
         // Whether to automatically create a docs route for you to view your generated docs. You can still set up routing manually.
-        'add_routes' => true,
+        // Tắt route mặc định của Scribe (trả 500 khi chưa generate file) — route được khai báo trong routes/web.php
+        'add_routes' => false,
 
         // URL path to use for the docs endpoint (if `add_routes` is true).
         // By default, `/docs` opens the HTML page, `/docs.postman` opens the Postman collection, and `/docs.openapi` the OpenAPI spec.
@@ -85,7 +86,7 @@ return [
     ],
 
     'try_it_out' => [
-        'enabled'  => true,
+        'enabled' => true,
         'base_url' => null,
         // Dùng CSRF vì project dùng Session Auth (web.php)
         'use_csrf' => true,
@@ -96,11 +97,11 @@ return [
     'auth' => [
         'enabled' => true,
         'default' => false,
-        'in'      => AuthIn::BEARER->value,
-        'name'    => 'laravel_session',
-        'use_value'   => env('SCRIBE_AUTH_KEY'),
+        'in' => AuthIn::BEARER->value,
+        'name' => 'laravel_session',
+        'use_value' => env('SCRIBE_AUTH_KEY', '{SESSION_COOKIE}'), // tránh Scribe tự sinh token ngẫu nhiên vào .scribe/
         'placeholder' => '{SESSION_COOKIE}',
-        'extra_info'  => 'Đăng nhập tại <b>/login</b> để có session cookie. Các endpoint cần auth sẽ được đánh dấu <code>🔒 Requires authentication</code>.',
+        'extra_info' => 'Đăng nhập tại <b>/login</b> để có session cookie. Các endpoint cần auth sẽ được đánh dấu <code>🔒 Requires authentication</code>.',
     ],
 
     // Example requests for each endpoint will be shown in each of these languages.
@@ -148,7 +149,7 @@ return [
 
     'groups' => [
         'default' => 'Endpoints',
-        'order'   => [
+        'order' => [
             'Authentication',
             'Products',
             'Cart',

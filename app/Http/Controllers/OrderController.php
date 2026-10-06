@@ -113,6 +113,16 @@ class OrderController extends Controller
         $checkout = session('checkout');
 
         if (! $checkout) {
+            // Double-submit: request đầu đã tạo đơn và xóa session checkout → đưa về đơn vừa tạo
+            $recentOrder = Auth::user()->orders()
+                ->where('created_at', '>=', now()->subSeconds(30))
+                ->latest('id')
+                ->first();
+
+            if ($recentOrder) {
+                return redirect()->route('orders.success', $recentOrder->id);
+            }
+
             return redirect()->route('checkout.index')
                 ->with('error', 'Phiên xác nhận đơn hàng đã hết hạn, vui lòng nhập lại thông tin.');
         }
@@ -148,6 +158,22 @@ class OrderController extends Controller
         } catch (OrderException|CouponException $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
+    }
+
+    /**
+     * Khách tự hủy đơn khi đơn còn "Chờ xử lý" và chưa thanh toán.
+     */
+    public function cancel(int $orderId)
+    {
+        $order = $this->orderService->getOrderForUser($orderId, Auth::id());
+
+        try {
+            $this->orderService->cancelByCustomer($order);
+        } catch (OrderException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('orders.show', $order->id)->with('success', 'Đã hủy đơn hàng.');
     }
 
     public function success(int $orderId)

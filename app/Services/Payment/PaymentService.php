@@ -6,13 +6,15 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\AuditService;
 use App\Services\BaseService;
+use App\Services\Order\OrderService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PaymentService extends BaseService
 {
     public function __construct(
-        private VNPayService $vnpayService
+        private VNPayService $vnpayService,
+        private OrderService $orderService
     ) {}
 
     public function createPayment(Order $order, string $ipAddress): Payment
@@ -69,7 +71,9 @@ class PaymentService extends BaseService
         $vnpAmount = $inputData['vnp_Amount'] ?? 0;
         $responseCode = $inputData['vnp_ResponseCode'] ?? '';
 
-        return DB::transaction(function () use ($transactionCode, $vnpAmount, $responseCode, $inputData) {
+        $failedOrder = null;
+
+        $result = DB::transaction(function () use ($transactionCode, $vnpAmount, $responseCode, $inputData, &$failedOrder) {
             // 2. Find Order via Payment
             // Sử dụng lockForUpdate để chống race condition nếu IPN gọi 2 lần cùng lúc
             $payment = Payment::where('transaction_code', $transactionCode)->lockForUpdate()->first();
@@ -112,14 +116,24 @@ class PaymentService extends BaseService
 
                 return ['RspCode' => '00', 'Message' => 'Confirm Success'];
             } else {
-                // Giao dịch lỗi
+                // Giao dịch lỗi / khách hủy thanh toán
                 $payment->update([
                     'status' => 'failed',
                     'response_data' => $inputData,
                 ]);
 
+                $order->update(['payment_status' => 'failed']);
+                $failedOrder = $order;
+
                 return ['RspCode' => '00', 'Message' => 'Confirm Success']; // Vẫn trả 00 vì merchant đã ghi nhận trạng thái lỗi
             }
         });
+
+        // Thanh toán thất bại → hủy đơn để hoàn tồn kho + lượt coupon (không giữ kho vĩnh viễn)
+        if ($failedOrder && $failedOrder->status === 'pending') {
+            $this->orderService->cancelOrder($failedOrder, 'payment_failed');
+        }
+
+        return $result;
     }
 }

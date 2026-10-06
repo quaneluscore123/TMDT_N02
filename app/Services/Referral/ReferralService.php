@@ -22,7 +22,7 @@ class ReferralService extends BaseService
         $referrer = User::where('referral_code', $referralCode)->first();
 
         // Không tìm thấy người giới thiệu hoặc User B đã được giới thiệu bởi người khác
-        if (!$referrer || Referral::where('referred_user_id', $newUser->id)->exists()) {
+        if (! $referrer || Referral::where('referred_user_id', $newUser->id)->exists()) {
             return;
         }
 
@@ -48,7 +48,7 @@ class ReferralService extends BaseService
             ->where('status', 'pending')
             ->first();
 
-        if (!$referral) {
+        if (! $referral) {
             return;
         }
 

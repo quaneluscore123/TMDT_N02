@@ -14,6 +14,16 @@
         'cancelled'  => 'Đã hủy',
     ];
     $allStatuses = ['pending', 'confirmed', 'shipping', 'delivered', 'cancelled'];
+    $paymentColors = [
+        'pending' => 'bg-yellow-100 text-yellow-800',
+        'paid'    => 'bg-green-100 text-green-800',
+        'failed'  => 'bg-red-100 text-red-800',
+    ];
+    $paymentLabels = [
+        'pending' => 'Chưa thanh toán',
+        'paid'    => 'Đã thanh toán',
+        'failed'  => 'Thất bại',
+    ];
 @endphp
 
 <x-layouts.admin :title="'Đơn ' . $order->order_code" :header="'Chi tiết đơn hàng'">
@@ -48,6 +58,13 @@
                 .then(r => r.json())
                 .then(data => {
                     this.updating = false;
+                    if (!data.success) {
+                        this.$el.querySelector('select').value = this.currentStatus;
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: data.message || 'Không thể cập nhật trạng thái.', type: 'error' }
+                        }));
+                        return;
+                    }
                     if (data.success) {
                         this.currentStatus = data.status;
                         window.dispatchEvent(new CustomEvent('toast', {
@@ -204,11 +221,14 @@
                         <span class="font-medium text-[#3d3d3d]">{{ strtoupper($order->payment_method) }}</span>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-[#9a9490]">Trạng thái:</span>
-                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
-                            {{ $statusLabels[$order->status] ?? $order->status }}
+                        <span class="text-[#9a9490]">Thanh toán:</span>
+                        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold {{ $paymentColors[$order->payment_status] ?? 'bg-gray-100 text-gray-800' }}">
+                            {{ $order->payment_method === 'cod' && $order->payment_status === 'pending' ? 'Thu khi giao (COD)' : ($paymentLabels[$order->payment_status] ?? $order->payment_status) }}
                         </span>
                     </div>
+                    @if($order->payment_method !== 'cod' && $order->payment_status !== 'paid' && $order->status !== 'cancelled')
+                        <p class="text-xs text-red-600 pt-1">Đơn chưa nhận được tiền — không thể xác nhận/giao hàng.</p>
+                    @endif
                 </div>
             </div>
         </div>

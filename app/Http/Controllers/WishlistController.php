@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use App\Models\Wishlist;
 use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +18,7 @@ class WishlistController extends Controller
         $wishlistIds = $productIds;
 
         $products = count($productIds)
-            ? Product::whereIn('id', $productIds)->with('category', 'images')->latest()->paginate(12)
+            ? Product::whereIn('id', $productIds)->with('category')->withCardData()->latest()->paginate(12)
             : collect([]);
 
         return view('pages.wishlist', compact('products', 'wishlistIds'));
@@ -41,16 +40,16 @@ class WishlistController extends Controller
         } else {
             WishlistItem::create([
                 'wishlist_id' => $wishlist->id,
-                'product_id'  => $product->id,
+                'product_id' => $product->id,
             ]);
             $isWishlisted = true;
             $message = 'Đã thêm vào yêu thích';
         }
 
         return response()->json([
-            'success'       => true,
+            'success' => true,
             'is_wishlisted' => $isWishlisted,
-            'message'       => $message,
+            'message' => $message,
         ]);
     }
 }

@@ -18,6 +18,7 @@ class LogoutController extends Controller
      * Hủy session hiện tại và redirect về trang đăng nhập.
      *
      * @group Authentication
+     *
      * @authenticated
      *
      * @response 302 scenario="Đăng xuất thành công" {}
