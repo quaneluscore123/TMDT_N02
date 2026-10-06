@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
 use App\Services\Order\OrderService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -48,7 +49,7 @@ class OrderServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->expectException(OrderException::class);
@@ -66,7 +67,7 @@ class OrderServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 2,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->expectException(OrderException::class);
@@ -83,16 +84,16 @@ class OrderServiceTest extends TestCase
             'product_id' => $product->id,
             'size' => 'M',
             'stock' => 1,
-            'price' => 1000
+            'price' => 1000,
         ]);
-        
+
         $cart = Cart::create(['user_id' => $user->id]);
         CartItem::create([
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'variant_id' => $variant->id,
             'quantity' => 2,
-            'price' => 1000
+            'price' => 1000,
         ]);
 
         $this->expectException(OrderException::class);
@@ -110,7 +111,7 @@ class OrderServiceTest extends TestCase
             'product_id' => $product->id,
             'size' => 'M',
             'stock' => 5,
-            'price' => 150000
+            'price' => 150000,
         ]);
 
         $cart = Cart::create(['user_id' => $user->id]);
@@ -119,7 +120,7 @@ class OrderServiceTest extends TestCase
             'product_id' => $product->id,
             'variant_id' => $variant->id,
             'quantity' => 2,
-            'price' => 150000
+            'price' => 150000,
         ]);
 
         $data = [
@@ -127,7 +128,7 @@ class OrderServiceTest extends TestCase
             'shipping_name' => 'John Doe',
             'shipping_phone' => '0123456789',
             'shipping_address' => '123 Street',
-            'note' => 'Please deliver fast'
+            'note' => 'Please deliver fast',
         ];
 
         $order = $this->orderService->placeOrder($user, $data);
@@ -160,7 +161,7 @@ class OrderServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 600000
+            'price' => 600000,
         ]);
 
         $coupon = Coupon::forceCreate([
@@ -170,7 +171,7 @@ class OrderServiceTest extends TestCase
             'min_order_amount' => 0,
             'status' => 'active',
             'usage_limit' => 10,
-            'used_count' => 0
+            'used_count' => 0,
         ]);
 
         session()->put('coupon_code', 'DISCOUNT50');
@@ -203,7 +204,7 @@ class OrderServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 100000
+            'price' => 100000,
         ]);
 
         session()->put('coupon_code', 'INVALID_CODE');
@@ -223,9 +224,9 @@ class OrderServiceTest extends TestCase
     {
         $user = User::factory()->create();
         Order::factory()->count(3)->create(['user_id' => $user->id]);
-        
+
         $orders = $this->orderService->getOrdersForUser($user->id);
-        
+
         $this->assertCount(3, $orders->items());
     }
 
@@ -233,9 +234,9 @@ class OrderServiceTest extends TestCase
     {
         $user = User::factory()->create();
         $order = Order::factory()->create(['user_id' => $user->id]);
-        
+
         $retrieved = $this->orderService->getOrderForUser($order->id, $user->id);
-        
+
         $this->assertEquals($order->id, $retrieved->id);
     }
 
@@ -244,8 +245,8 @@ class OrderServiceTest extends TestCase
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
         $order = Order::factory()->create(['user_id' => $user1->id]);
-        
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+
+        $this->expectException(ModelNotFoundException::class);
         $this->orderService->getOrderForUser($order->id, $user2->id);
     }
 
@@ -260,7 +261,7 @@ class OrderServiceTest extends TestCase
     {
         // Mock Mail to throw exception
         Mail::shouldReceive('to')->andThrow(new \Exception('Mail server down'));
-        
+
         $user = User::factory()->create();
         $product = Product::factory()->create(['status' => 'active', 'stock' => 10, 'price' => 100000]);
 
@@ -269,7 +270,7 @@ class OrderServiceTest extends TestCase
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'quantity' => 1,
-            'price' => 100000
+            'price' => 100000,
         ]);
 
         $data = [

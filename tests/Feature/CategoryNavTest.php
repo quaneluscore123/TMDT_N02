@@ -19,22 +19,22 @@ class CategoryNavTest extends TestCase
     public function test_header_shows_active_parent_and_child_categories(): void
     {
         $parent = Category::factory()->create([
-            'name'      => 'Thời trang nav test',
+            'name' => 'Thời trang nav test',
             'parent_id' => null,
-            'status'    => 'active',
+            'status' => 'active',
         ]);
         Category::factory()->child($parent->id)->create([
-            'name'   => 'Áo nav test',
+            'name' => 'Áo nav test',
             'status' => 'active',
         ]);
         Category::factory()->child($parent->id)->inactive()->create([
-            'name'   => 'Ẩn nav test',
+            'name' => 'Ẩn nav test',
             'status' => 'inactive',
         ]);
         Category::factory()->inactive()->create([
-            'name'      => 'Danh mục cha ẩn',
+            'name' => 'Danh mục cha ẩn',
             'parent_id' => null,
-            'status'    => 'inactive',
+            'status' => 'inactive',
         ]);
 
         $response = $this->get('/');
@@ -81,7 +81,7 @@ class CategoryNavTest extends TestCase
     public function test_parent_category_filter_includes_products_assigned_to_parent(): void
     {
         $parent = Category::factory()->create(['parent_id' => null, 'status' => 'active']);
-        $child  = Category::factory()->child($parent->id)->create(['status' => 'active']);
+        $child = Category::factory()->child($parent->id)->create(['status' => 'active']);
 
         Product::factory()->create(['category_id' => $parent->id, 'status' => 'active']);
         Product::factory()->create(['category_id' => $child->id, 'status' => 'active']);

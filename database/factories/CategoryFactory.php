@@ -16,12 +16,12 @@ class CategoryFactory extends Factory
         $name = fake('vi_VN')->words(2, true);
 
         return [
-            'name'       => ucfirst($name),
-            'slug'       => Str::slug($name) . '-' . Str::random(4),
-            'parent_id'  => null,
-            'image'      => null,
+            'name' => ucfirst($name),
+            'slug' => Str::slug($name).'-'.Str::random(4),
+            'parent_id' => null,
+            'image' => null,
             'sort_order' => fake()->numberBetween(1, 100),
-            'status'     => 'active',
+            'status' => 'active',
         ];
     }
 

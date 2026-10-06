@@ -15,8 +15,8 @@ class ChatbotFaqController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('question', 'like', "%{$search}%")
-                  ->orWhere('answer', 'like', "%{$search}%")
-                  ->orWhere('keywords', 'like', "%{$search}%");
+                    ->orWhere('answer', 'like', "%{$search}%")
+                    ->orWhere('keywords', 'like', "%{$search}%");
             });
         }
 
@@ -27,7 +27,7 @@ class ChatbotFaqController extends Controller
         $faqs = $query->latest('sort_order')->latest()->paginate(15)->withQueryString();
 
         $stats = [
-            'total'  => ChatbotFaq::count(),
+            'total' => ChatbotFaq::count(),
             'active' => ChatbotFaq::where('status', 'active')->count(),
         ];
 
@@ -42,10 +42,10 @@ class ChatbotFaqController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'question'   => 'required|string|max:255',
-            'answer'     => 'required|string|max:1000',
-            'keywords'   => 'nullable|string|max:500',
-            'status'     => 'required|in:active,inactive',
+            'question' => 'required|string|max:255',
+            'answer' => 'required|string|max:1000',
+            'keywords' => 'nullable|string|max:500',
+            'status' => 'required|in:active,inactive',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -65,10 +65,10 @@ class ChatbotFaqController extends Controller
     public function update(Request $request, ChatbotFaq $chatbotFaq)
     {
         $validated = $request->validate([
-            'question'   => 'required|string|max:255',
-            'answer'     => 'required|string|max:1000',
-            'keywords'   => 'nullable|string|max:500',
-            'status'     => 'required|in:active,inactive',
+            'question' => 'required|string|max:255',
+            'answer' => 'required|string|max:1000',
+            'keywords' => 'nullable|string|max:500',
+            'status' => 'required|in:active,inactive',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 

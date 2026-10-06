@@ -4,9 +4,9 @@ namespace Tests\Feature\Console\Commands;
 
 use App\Console\Commands\BackupDatabase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
 use Tests\TestCase;
-use Illuminate\Support\Facades\File;
 
 class BackupDatabaseTest extends TestCase
 {
@@ -53,7 +53,7 @@ class BackupDatabaseTest extends TestCase
         $path = PHP_OS_FAMILY === 'Windows' ? 'Z:\\*?\\invalid\\file.sql' : '/root/forbidden/file.sql';
 
         $this->artisan('db:backup', ['--path' => $path])
-            ->expectsOutput("Không tạo được thư mục: " . dirname($path))
+            ->expectsOutput('Không tạo được thư mục: '.dirname($path))
             ->assertExitCode(1);
     }
 
@@ -70,7 +70,7 @@ class BackupDatabaseTest extends TestCase
         $this->app->instance(BackupDatabase::class, $command);
 
         Process::fake([
-            '*' => Process::result('error', 'Something went wrong', 1)
+            '*' => Process::result('error', 'Something went wrong', 1),
         ]);
 
         $path = storage_path('app/test_backup.sql');
@@ -93,7 +93,7 @@ class BackupDatabaseTest extends TestCase
         $this->app->instance(BackupDatabase::class, $command);
 
         Process::fake([
-            '*' => Process::result('success', '', 0)
+            '*' => Process::result('success', '', 0),
         ]);
 
         $path = storage_path('app/test_backup_empty.sql');
@@ -103,9 +103,9 @@ class BackupDatabaseTest extends TestCase
         touch($path); // Create empty file
 
         $this->artisan('db:backup', ['--path' => $path])
-            ->expectsOutput('Backup tạo ra file rỗng: ' . $path)
+            ->expectsOutput('Backup tạo ra file rỗng: '.$path)
             ->assertExitCode(1);
-            
+
         unlink($path);
     }
 
@@ -126,14 +126,15 @@ class BackupDatabaseTest extends TestCase
         Process::fake([
             '*' => function () use ($path) {
                 file_put_contents($path, 'DUMMY DATA');
+
                 return Process::result('success', '', 0);
-            }
+            },
         ]);
 
         $this->artisan('db:backup', ['--path' => $path])
-            ->expectsOutput('Backup thành công: ' . $path . ' (' . round(10 / 1024, 1) . ' KB)')
+            ->expectsOutput('Backup thành công: '.$path.' ('.round(10 / 1024, 1).' KB)')
             ->assertExitCode(0);
-            
+
         unlink($path);
     }
 }

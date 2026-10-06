@@ -15,7 +15,7 @@ class AddToCartRequest extends FormRequest
     {
         return [
             'product_id' => ['required', 'integer', 'exists:products,id'],
-            'quantity'   => ['required', 'integer', 'min:1', 'max:100'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:100'],
         ];
     }
 
@@ -23,10 +23,10 @@ class AddToCartRequest extends FormRequest
     {
         return [
             'product_id.required' => 'Vui lòng chọn sản phẩm.',
-            'product_id.exists'   => 'Sản phẩm không tồn tại.',
-            'quantity.required'   => 'Vui lòng nhập số lượng.',
-            'quantity.min'        => 'Số lượng phải ít nhất là 1.',
-            'quantity.max'        => 'Số lượng không được vượt quá 100.',
+            'product_id.exists' => 'Sản phẩm không tồn tại.',
+            'quantity.required' => 'Vui lòng nhập số lượng.',
+            'quantity.min' => 'Số lượng phải ít nhất là 1.',
+            'quantity.max' => 'Số lượng không được vượt quá 100.',
         ];
     }
 }

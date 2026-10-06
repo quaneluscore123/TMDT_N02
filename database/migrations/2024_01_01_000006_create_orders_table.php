@@ -17,7 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('shipping_fee')->default(0);
             $table->unsignedBigInteger('total');
             $table->enum('status', [
-                'pending', 'confirmed', 'shipping', 'delivered', 'cancelled'
+                'pending', 'confirmed', 'shipping', 'delivered', 'cancelled',
             ])->default('pending');
             $table->enum('payment_method', ['cod', 'vnpay']);
             $table->enum('payment_status', ['pending', 'paid', 'failed'])->default('pending');

@@ -17,14 +17,17 @@ class ChatbotAllFortyTest extends TestCase
     use RefreshDatabase;
 
     private ChatbotService $chatbot;
+
     private User $customer;
+
     private User $admin;
+
     private int $userId;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->chatbot = new ChatbotService();
+        $this->chatbot = new ChatbotService;
         $this->admin = User::factory()->create(['role' => 'admin']);
         $this->customer = User::factory()->create(['role' => 'customer']);
         $this->userId = $this->customer->id;
@@ -244,7 +247,7 @@ class ChatbotAllFortyTest extends TestCase
     public function test_29_fallback_ten(): void
     {
         $r = $this->chatbot->sendMessage('Bạn tên gì', [], $this->userId);
-        $this->assertNotEmpty($r, "#29 empty");
+        $this->assertNotEmpty($r, '#29 empty');
     }
 
     public function test_30_fallback_thoi_tiet(): void
@@ -323,7 +326,7 @@ class ChatbotAllFortyTest extends TestCase
         $faq = $this->createTestFaq();
         $faq->update(['status' => 'inactive']);
         $r = $this->chatbot->sendMessage('Test FAQ editable', [], $this->userId);
-        $this->assertStringNotContainsString('Test answer original', $r, "#38: disabled FAQ used");
+        $this->assertStringNotContainsString('Test answer original', $r, '#38: disabled FAQ used');
     }
 
     public function test_39_admin_delete(): void

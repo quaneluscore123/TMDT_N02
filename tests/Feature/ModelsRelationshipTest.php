@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductImage;
@@ -61,7 +62,7 @@ class ModelsRelationshipTest extends TestCase
     public function test_payment_relationships()
     {
         $order = Order::factory()->create();
-        
+
         $payment = Payment::create([
             'order_id' => $order->id,
             'method' => 'cod',
@@ -84,7 +85,7 @@ class ModelsRelationshipTest extends TestCase
             'start_at' => now()->subDay(),
             'end_at' => now()->addDay(),
             'usage_limit' => 10,
-            'used_count' => 0
+            'used_count' => 0,
         ]);
 
         $validCoupons = Coupon::valid()->get();
@@ -113,33 +114,33 @@ class ModelsRelationshipTest extends TestCase
 
     public function test_order_item_option_label()
     {
-        $item = new \App\Models\OrderItem(['size' => 'XL', 'color' => 'Red']);
+        $item = new OrderItem(['size' => 'XL', 'color' => 'Red']);
         $this->assertEquals('XL - Red', $item->optionLabel());
 
-        $item2 = new \App\Models\OrderItem(['size' => 'XL']);
+        $item2 = new OrderItem(['size' => 'XL']);
         $this->assertEquals('XL', $item2->optionLabel());
 
-        $item3 = new \App\Models\OrderItem();
+        $item3 = new OrderItem;
         $this->assertNull($item3->optionLabel());
     }
 
     public function test_payment_methods()
     {
-        $payment = new \App\Models\Payment();
+        $payment = new Payment;
         $payment->transaction_id = 'VNP123';
         $this->assertEquals('VNP123', $payment->transaction_id);
     }
 
     public function test_product_image_methods()
     {
-        $image = new \App\Models\ProductImage();
+        $image = new ProductImage;
         $image->is_primary = true;
         $this->assertTrue($image->is_primary);
     }
 
     public function test_referral_methods()
     {
-        $referral = new \App\Models\Referral();
+        $referral = new Referral;
         $referral->reward_amount = 50000;
         $this->assertEquals(50000, $referral->reward_amount);
     }

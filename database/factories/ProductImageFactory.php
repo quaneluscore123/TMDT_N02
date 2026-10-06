@@ -20,9 +20,9 @@ class ProductImageFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'image_path' => 'images/products/placeholder-' . fake()->numberBetween(1, 10) . '.jpg',
-            'is_primary'  => false,
-            'sort_order'  => fake()->numberBetween(1, 10),
+            'image_path' => 'images/products/placeholder-'.fake()->numberBetween(1, 10).'.jpg',
+            'is_primary' => false,
+            'sort_order' => fake()->numberBetween(1, 10),
         ];
     }
 

@@ -25,7 +25,7 @@ class ProductModelTest extends TestCase
         // 1. primaryImage()
         $image = ProductImage::factory()->create([
             'product_id' => $product->id,
-            'is_primary' => true
+            'is_primary' => true,
         ]);
         $this->assertEquals($image->id, $product->primaryImage->id);
 
@@ -37,7 +37,7 @@ class ProductModelTest extends TestCase
             'product_name' => $product->name,
             'quantity' => 1,
             'price' => 1000,
-            'subtotal' => 1000
+            'subtotal' => 1000,
         ]);
         $this->assertCount(1, $product->orderItems);
 
@@ -57,17 +57,17 @@ class ProductModelTest extends TestCase
         Review::factory()->create([
             'product_id' => $product->id,
             'status' => 'approved',
-            'rating' => 4
+            'rating' => 4,
         ]);
         Review::factory()->create([
             'product_id' => $product->id,
             'status' => 'approved',
-            'rating' => 5
+            'rating' => 5,
         ]);
         Review::factory()->create([
             'product_id' => $product->id,
             'status' => 'pending', // Pending shouldn't be counted
-            'rating' => 1
+            'rating' => 1,
         ]);
 
         $this->assertEquals(2, $product->reviews_count);

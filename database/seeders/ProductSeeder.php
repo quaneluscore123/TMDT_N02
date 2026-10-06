@@ -6,7 +6,6 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
@@ -29,8 +28,8 @@ class ProductSeeder extends Seeder
                     ProductImage::create([
                         'product_id' => $product->id,
                         'image_path' => "https://picsum.photos/seed/{$product->id}-{$i}/600/600",
-                        'is_primary'  => $i === 0,
-                        'sort_order'  => $i,
+                        'is_primary' => $i === 0,
+                        'sort_order' => $i,
                     ]);
                 }
             });

@@ -64,6 +64,7 @@ class BackupDatabase extends Command
 
         if ($result->failed()) {
             $this->error('Backup thất bại: '.$result->errorOutput());
+
             return self::FAILURE;
         }
 

@@ -18,10 +18,10 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'subtotal'      => 'integer',
-            'discount'      => 'integer',
-            'shipping_fee'  => 'integer',
-            'total'         => 'integer',
+            'subtotal' => 'integer',
+            'discount' => 'integer',
+            'shipping_fee' => 'integer',
+            'total' => 'integer',
         ];
     }
 

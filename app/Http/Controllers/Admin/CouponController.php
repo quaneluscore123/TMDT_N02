@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class CouponController extends Controller
 {
@@ -33,10 +32,10 @@ class CouponController extends Controller
         $coupons = $query->latest()->paginate(15)->withQueryString();
 
         $stats = [
-            'total'     => Coupon::count(),
-            'active'    => Coupon::where('status', 'active')->count(),
-            'expired'   => Coupon::where('end_at', '<', now())->count(),
-            'used'      => CouponUsage::count(),
+            'total' => Coupon::count(),
+            'active' => Coupon::where('status', 'active')->count(),
+            'expired' => Coupon::where('end_at', '<', now())->count(),
+            'used' => CouponUsage::count(),
         ];
 
         return view('admin.coupons.index', compact('coupons', 'stats'));
@@ -50,15 +49,15 @@ class CouponController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code'             => 'required|string|max:50|alpha_dash|unique:coupons,code',
-            'type'             => 'required|in:percent,fixed',
-            'value'            => 'required|integer|min:1',
-            'max_discount'     => 'nullable|integer|min:0',
+            'code' => 'required|string|max:50|alpha_dash|unique:coupons,code',
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|integer|min:1',
+            'max_discount' => 'nullable|integer|min:0',
             'min_order_amount' => 'required|integer|min:0',
-            'start_at'         => 'nullable|date',
-            'end_at'           => 'nullable|date|after_or_equal:start_at',
-            'usage_limit'      => 'nullable|integer|min:0',
-            'status'           => 'required|in:active,inactive',
+            'start_at' => 'nullable|date',
+            'end_at' => 'nullable|date|after_or_equal:start_at',
+            'usage_limit' => 'nullable|integer|min:0',
+            'status' => 'required|in:active,inactive',
         ]);
 
         $validated['code'] = strtoupper($validated['code']);
@@ -89,15 +88,15 @@ class CouponController extends Controller
     public function update(Request $request, Coupon $coupon)
     {
         $validated = $request->validate([
-            'code'             => 'required|string|max:50|alpha_dash|unique:coupons,code,' . $coupon->id,
-            'type'             => 'required|in:percent,fixed',
-            'value'            => 'required|integer|min:1',
-            'max_discount'     => 'nullable|integer|min:0',
+            'code' => 'required|string|max:50|alpha_dash|unique:coupons,code,'.$coupon->id,
+            'type' => 'required|in:percent,fixed',
+            'value' => 'required|integer|min:1',
+            'max_discount' => 'nullable|integer|min:0',
             'min_order_amount' => 'required|integer|min:0',
-            'start_at'         => 'nullable|date',
-            'end_at'           => 'nullable|date|after_or_equal:start_at',
-            'usage_limit'      => 'nullable|integer|min:0',
-            'status'           => 'required|in:active,inactive',
+            'start_at' => 'nullable|date',
+            'end_at' => 'nullable|date|after_or_equal:start_at',
+            'usage_limit' => 'nullable|integer|min:0',
+            'status' => 'required|in:active,inactive',
         ]);
 
         $validated['code'] = strtoupper($validated['code']);

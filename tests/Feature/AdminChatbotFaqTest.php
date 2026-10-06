@@ -32,10 +32,10 @@ class AdminChatbotFaqTest extends TestCase
     public function test_admin_can_create_faq(): void
     {
         $response = $this->actingAs($this->admin)->post(route('admin.chatbot-faqs.store'), [
-            'question'   => 'Test question?',
-            'answer'     => 'Test answer.',
-            'keywords'   => 'test,keyword',
-            'status'     => 'active',
+            'question' => 'Test question?',
+            'answer' => 'Test answer.',
+            'keywords' => 'test,keyword',
+            'status' => 'active',
             'sort_order' => 1,
         ]);
 
@@ -48,10 +48,10 @@ class AdminChatbotFaqTest extends TestCase
         $faq = ChatbotFaq::factory()->create(['question' => 'Old question']);
 
         $response = $this->actingAs($this->admin)->put(route('admin.chatbot-faqs.update', $faq), [
-            'question'   => 'Updated question',
-            'answer'     => 'Updated answer',
-            'keywords'   => null,
-            'status'     => 'active',
+            'question' => 'Updated question',
+            'answer' => 'Updated answer',
+            'keywords' => null,
+            'status' => 'active',
             'sort_order' => 0,
         ]);
 

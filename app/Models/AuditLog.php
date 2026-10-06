@@ -23,7 +23,7 @@ class AuditLog extends Model
     protected function casts(): array
     {
         return [
-            'metadata'   => 'array',
+            'metadata' => 'array',
             'created_at' => 'datetime',
         ];
     }

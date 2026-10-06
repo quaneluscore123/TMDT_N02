@@ -19,10 +19,10 @@ class WishlistModelTest extends TestCase
         $product = Product::factory()->create();
 
         $wishlist = Wishlist::create(['user_id' => $user->id]);
-        
+
         $item = WishlistItem::create([
             'wishlist_id' => $wishlist->id,
-            'product_id' => $product->id
+            'product_id' => $product->id,
         ]);
 
         // Test Wishlist

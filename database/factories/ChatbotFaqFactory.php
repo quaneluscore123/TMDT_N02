@@ -15,10 +15,10 @@ class ChatbotFaqFactory extends Factory
     public function definition(): array
     {
         return [
-            'question'   => fake()->sentence(),
-            'answer'     => fake()->paragraph(),
-            'keywords'   => implode(',', fake()->words(3)),
-            'status'     => 'active',
+            'question' => fake()->sentence(),
+            'answer' => fake()->paragraph(),
+            'keywords' => implode(',', fake()->words(3)),
+            'status' => 'active',
             'sort_order' => fake()->numberBetween(0, 10),
         ];
     }

@@ -7,8 +7,11 @@ use Livewire\Component;
 class ChatbotWidget extends Component
 {
     public $isOpen = false;
+
     public $message = '';
+
     public $messages = [];
+
     public $isLoading = false;
 
     protected $listeners = [
@@ -17,7 +20,7 @@ class ChatbotWidget extends Component
 
     public function toggle()
     {
-        $this->isOpen = !$this->isOpen;
+        $this->isOpen = ! $this->isOpen;
     }
 
     public function sendQuick(string $text): void
@@ -36,7 +39,7 @@ class ChatbotWidget extends Component
         $this->message = '';
 
         $this->messages[] = [
-            'type'    => 'user',
+            'type' => 'user',
             'content' => $userMessage,
         ];
 
@@ -49,7 +52,7 @@ class ChatbotWidget extends Component
         $content = trim((string) $response);
         if ($content !== '') {
             $this->messages[] = [
-                'type'    => 'bot',
+                'type' => 'bot',
                 'content' => $content,
             ];
         }
