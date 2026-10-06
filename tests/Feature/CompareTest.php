@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -136,5 +137,15 @@ class CompareTest extends TestCase
             ->assertOk();
 
         $this->assertNull(session('compare_products'));
+    }
+
+    public function test_user_menu_has_link_to_compare_page(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get('/')
+            ->assertOk()
+            ->assertSee(route('compare.index'), false)
+            ->assertSee('So sánh');
     }
 }
