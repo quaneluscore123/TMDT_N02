@@ -85,6 +85,11 @@
                                     <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold {{ $statusColors[$order->status] ?? 'bg-gray-100 text-gray-800' }}">
                                         {{ $statusLabels[$order->status] ?? $order->status }}
                                     </span>
+                                    @if($order->payment_method !== 'cod')
+                                        <span class="block mt-1 text-xs {{ $order->payment_status === 'paid' ? 'text-green-700' : ($order->payment_status === 'failed' ? 'text-red-600' : 'text-yellow-700') }}">
+                                            VNPay · {{ ['paid' => 'Đã thanh toán', 'failed' => 'Thất bại'][$order->payment_status] ?? 'Chưa thanh toán' }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="px-5 py-4 text-[#9a9490]">{{ $order->created_at->format('d/m/Y H:i') }}</td>
                                 <td class="px-5 py-4 text-right">

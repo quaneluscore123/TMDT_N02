@@ -488,7 +488,7 @@ endpoints:
     auth:
       - headers
       - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+      - 'Bearer {SESSION_COOKIE}'
     controller: null
     method: null
     route: null

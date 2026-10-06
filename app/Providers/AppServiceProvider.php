@@ -24,11 +24,23 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Giới hạn đăng nhập sai: 5 lần / 5 phút theo email + IP (TC-01)
+        // Giới hạn đăng nhập sai: 5 lần / 5 phút theo email + IP (TC-01),
+        // thêm 20 lần / 5 phút theo IP để chặn dò nhiều email từ 1 máy
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinutes(5, 5)->by(
-                strtolower((string) $request->input('email')).'|'.$request->ip()
-            );
+            return [
+                Limit::perMinutes(5, 5)->by(
+                    strtolower((string) $request->input('email')).'|'.$request->ip()
+                ),
+                Limit::perMinutes(5, 20)->by('ip:'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for('checkout', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('reviews', function (Request $request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
         });
 
         RateLimiter::for('register', function (Request $request) {

@@ -104,4 +104,18 @@ class LoginRateLimitTest extends TestCase
             'action' => 'login_failed',
         ]);
     }
+
+    public function test_login_throttled_per_ip_across_different_emails(): void
+    {
+        // 20 email khác nhau từ cùng 1 IP → lần thứ 21 bị chặn
+        for ($i = 0; $i < 20; $i++) {
+            $this->post('/login', ['email' => "nobody{$i}@example.com", 'password' => 'x'])
+                ->assertSessionHasErrors('email');
+        }
+
+        $user = $this->createUser();
+        $this->postLogin($user, 'correct-password');
+
+        $this->assertTrue(auth()->guest());
+    }
 }

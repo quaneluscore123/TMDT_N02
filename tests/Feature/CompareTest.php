@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Product;
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -42,7 +42,7 @@ class CompareTest extends TestCase
 
         $response = $this->post("/compare/remove/{$product->id}");
         $response->assertStatus(302);
-        
+
         // After removal, the session should have empty array
         $this->assertEmpty(session('compare_products', []));
     }
@@ -77,22 +77,22 @@ class CompareTest extends TestCase
 
         $this->post("/compare/add/{$products->last()->id}")
             ->assertSessionHas('error');
-            
+
         $this->postJson("/compare/add/{$products->last()->id}")
             ->assertStatus(422)
             ->assertJson(['success' => false]);
     }
-    
+
     public function test_user_cannot_add_duplicate_product(): void
     {
         $category = Category::factory()->create();
         $product = Product::factory()->create(['category_id' => $category->id]);
-        
+
         $this->session(['compare_products' => [$product->id]]);
-        
+
         $this->post("/compare/add/{$product->id}")
             ->assertSessionHas('error');
-            
+
         $this->postJson("/compare/add/{$product->id}")
             ->assertStatus(422)
             ->assertJson(['success' => false]);
@@ -102,7 +102,7 @@ class CompareTest extends TestCase
     {
         $category = Category::factory()->create();
         $product = Product::factory()->create(['category_id' => $category->id]);
-        
+
         $this->postJson("/compare/add/{$product->id}")
             ->assertStatus(200)
             ->assertJson(['success' => true]);
@@ -111,10 +111,30 @@ class CompareTest extends TestCase
     public function test_clear_compare(): void
     {
         $this->session(['compare_products' => [1, 2, 3]]);
-        
-        $this->post("/compare/clear")
+
+        $this->post('/compare/clear')
             ->assertRedirect();
-            
+
+        $this->assertNull(session('compare_products'));
+    }
+
+    public function test_compare_get_accepts_at_most_four_products(): void
+    {
+        $category = Category::factory()->create();
+        $ids = Product::factory()->count(6)->create(['category_id' => $category->id, 'status' => 'active'])->pluck('id');
+
+        $response = $this->get('/compare?'.http_build_query(['products' => $ids->all()]));
+
+        $response->assertOk();
+        $this->assertCount(4, $response->viewData('products'));
+        $this->assertCount(4, session('compare_products'));
+    }
+
+    public function test_compare_get_ignores_non_numeric_ids(): void
+    {
+        $this->get('/compare?'.http_build_query(['products' => ['abc', ['x'], '1 OR 1=1']]))
+            ->assertOk();
+
         $this->assertNull(session('compare_products'));
     }
 }

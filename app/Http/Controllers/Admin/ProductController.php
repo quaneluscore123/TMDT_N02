@@ -9,7 +9,6 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -52,7 +51,7 @@ class ProductController extends Controller
             'status' => 'sometimes|in:active,inactive',
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']);
+        $validated['slug'] = Product::uniqueSlug($validated['name']);
         $validated['status'] = $request->input('status', 'active');
 
         $product = Product::create(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
@@ -82,7 +81,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:products,name,' . $product->id,
+            'name' => 'required|string|max:255|unique:products,name,'.$product->id,
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0|lt:price',
@@ -93,7 +92,7 @@ class ProductController extends Controller
             'status' => 'sometimes|in:active,inactive,out_of_stock',
         ]);
 
-        $validated['slug'] = Str::slug($validated['name']);
+        $validated['slug'] = Product::uniqueSlug($validated['name'], $product->id);
 
         $product->update(collect($validated)->only(['name', 'slug', 'description', 'price', 'sale_price', 'category_id', 'stock', 'brand', 'status'])->toArray());
 
@@ -188,7 +187,25 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        // Sản phẩm đã có trong đơn hàng → không xóa cứng (giữ lịch sử đơn), chỉ ngừng kinh doanh
+        if ($product->orderItems()->exists()) {
+            $product->update(['status' => 'inactive']);
+
+            return redirect()->route('admin.products.index')
+                ->with('error', 'Sản phẩm đã có trong đơn hàng nên không thể xóa — đã chuyển sang ngừng kinh doanh.');
+        }
+
+        $imagePaths = $product->images()->pluck('image_path');
+
         $product->delete();
+
+        foreach ($imagePaths as $path) {
+            $stillUsed = ProductImage::where('image_path', $path)->exists();
+
+            if (! $stillUsed && str_starts_with($path, 'images/products/')) {
+                Storage::disk('public')->delete($path);
+            }
+        }
 
         return redirect()->route('admin.products.index')
             ->with('success', 'Đã xóa sản phẩm!');

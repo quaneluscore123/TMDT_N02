@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -15,10 +16,11 @@ class ProductTest extends TestCase
     private function createProduct(array $attrs = []): Product
     {
         $category = Category::factory()->create();
+
         return Product::factory()->create(array_merge([
             'category_id' => $category->id,
-            'status'      => 'active',
-            'stock'       => 10,
+            'status' => 'active',
+            'stock' => 10,
         ], $attrs));
     }
 
@@ -64,8 +66,8 @@ class ProductTest extends TestCase
 
     public function test_product_detail_page_loads(): void
     {
-        $product  = $this->createProduct(['slug' => 'ao-thun-test']);
-        $response = $this->get("/products/ao-thun-test");
+        $product = $this->createProduct(['slug' => 'ao-thun-test']);
+        $response = $this->get('/products/ao-thun-test');
         $response->assertStatus(200);
         $response->assertViewIs('products.show');
         $response->assertViewHas('product', fn ($p) => $p->id === $product->id);
@@ -86,21 +88,21 @@ class ProductTest extends TestCase
     public function test_category_page_loads_with_parent_and_children_products(): void
     {
         $parent = Category::factory()->create([
-            'name'      => 'Danh mục cha page test',
-            'slug'      => 'danh-muc-cha-page-test',
+            'name' => 'Danh mục cha page test',
+            'slug' => 'danh-muc-cha-page-test',
             'parent_id' => null,
-            'status'    => 'active',
+            'status' => 'active',
         ]);
         $child1 = Category::factory()->child($parent->id)->create([
-            'slug'   => 'con-mot-page-test',
+            'slug' => 'con-mot-page-test',
             'status' => 'active',
         ]);
         $child2 = Category::factory()->child($parent->id)->create([
-            'slug'   => 'con-hai-page-test',
+            'slug' => 'con-hai-page-test',
             'status' => 'active',
         ]);
         $inactiveChild = Category::factory()->child($parent->id)->inactive()->create([
-            'slug'   => 'con-an-page-test',
+            'slug' => 'con-an-page-test',
             'status' => 'inactive',
         ]);
 
@@ -121,11 +123,11 @@ class ProductTest extends TestCase
     {
         $parent = Category::factory()->create(['parent_id' => null, 'status' => 'active']);
         $child1 = Category::factory()->child($parent->id)->create([
-            'slug'   => 'chi-con-mot',
+            'slug' => 'chi-con-mot',
             'status' => 'active',
         ]);
         Category::factory()->child($parent->id)->create([
-            'slug'   => 'chi-con-hai',
+            'slug' => 'chi-con-hai',
             'status' => 'active',
         ]);
 
@@ -146,9 +148,9 @@ class ProductTest extends TestCase
     public function test_category_page_inactive_category_returns_404(): void
     {
         Category::factory()->create([
-            'slug'      => 'danh-muc-an',
+            'slug' => 'danh-muc-an',
             'parent_id' => null,
-            'status'    => 'inactive',
+            'status' => 'inactive',
         ]);
 
         $this->get('/danh-muc/danh-muc-an')->assertNotFound();
@@ -157,9 +159,9 @@ class ProductTest extends TestCase
     public function test_category_route_uses_slug(): void
     {
         $category = Category::factory()->create([
-            'slug'      => 'duong-dan-slug',
+            'slug' => 'duong-dan-slug',
             'parent_id' => null,
-            'status'    => 'active',
+            'status' => 'active',
         ]);
 
         $this->assertSame(
@@ -172,8 +174,8 @@ class ProductTest extends TestCase
     {
         $admin = User::factory()->create(['role' => 'admin']);
         $category = Category::factory()->create([
-            'name'      => 'Tên cũ',
-            'slug'      => 'ten-cu',
+            'name' => 'Tên cũ',
+            'slug' => 'ten-cu',
             'parent_id' => null,
         ]);
 
@@ -184,7 +186,7 @@ class ProductTest extends TestCase
 
         $response->assertRedirect(route('admin.categories.index'));
         $this->assertDatabaseHas('categories', [
-            'id'   => $category->id,
+            'id' => $category->id,
             'name' => 'Tên mới sau update',
         ]);
     }
@@ -247,7 +249,7 @@ class ProductTest extends TestCase
     public function test_product_show_loads_images_relation(): void
     {
         $product = $this->createProduct(['slug' => 'sp-gallery-test']);
-        \App\Models\ProductImage::factory()->count(3)->create([
+        ProductImage::factory()->count(3)->create([
             'product_id' => $product->id,
         ]);
 
@@ -271,23 +273,58 @@ class ProductTest extends TestCase
     public function test_product_show_images_ordered_primary_first(): void
     {
         $product = $this->createProduct(['slug' => 'sp-primary-first']);
-        \App\Models\ProductImage::factory()->create([
+        ProductImage::factory()->create([
             'product_id' => $product->id,
-            'is_primary'  => false,
-            'sort_order'  => 1,
+            'is_primary' => false,
+            'sort_order' => 1,
         ]);
-        \App\Models\ProductImage::factory()->create([
+        ProductImage::factory()->create([
             'product_id' => $product->id,
-            'is_primary'  => true,
-            'sort_order'  => 2,
+            'is_primary' => true,
+            'sort_order' => 2,
         ]);
 
         // Truy vấn trực tiếp với ordering giống controller: is_primary DESC, sort_order ASC
-        $images = \App\Models\ProductImage::where('product_id', $product->id)
+        $images = ProductImage::where('product_id', $product->id)
             ->orderByDesc('is_primary')
             ->orderBy('sort_order')
             ->get();
 
         $this->assertTrue($images->first()->is_primary);
+    }
+
+    public function test_products_sort_by_price_ascending_and_descending(): void
+    {
+        $this->createProduct(['name' => 'Rẻ', 'price' => 100000, 'sale_price' => null]);
+        $this->createProduct(['name' => 'Đắt', 'price' => 900000, 'sale_price' => null]);
+        $this->createProduct(['name' => 'Vừa', 'price' => 500000, 'sale_price' => null]);
+
+        $asc = $this->get('/products?sort=price_asc')->viewData('products')->pluck('name')->all();
+        $desc = $this->get('/products?sort=price_desc')->viewData('products')->pluck('name')->all();
+
+        $this->assertSame(['Rẻ', 'Vừa', 'Đắt'], $asc);
+        $this->assertSame(['Đắt', 'Vừa', 'Rẻ'], $desc);
+    }
+
+    public function test_products_sort_by_name(): void
+    {
+        $this->createProduct(['name' => 'Charlie']);
+        $this->createProduct(['name' => 'Alpha']);
+        $this->createProduct(['name' => 'Bravo']);
+
+        $names = $this->get('/products?sort=name')->viewData('products')->pluck('name')->all();
+
+        $this->assertSame(['Alpha', 'Bravo', 'Charlie'], $names);
+    }
+
+    public function test_products_min_and_max_price_filter(): void
+    {
+        $this->createProduct(['name' => 'Dưới', 'price' => 50000, 'sale_price' => null]);
+        $this->createProduct(['name' => 'Trong', 'price' => 300000, 'sale_price' => null]);
+        $this->createProduct(['name' => 'Trên', 'price' => 2000000, 'sale_price' => null]);
+
+        $names = $this->get('/products?min_price=100000&max_price=1000000')->viewData('products')->pluck('name')->all();
+
+        $this->assertSame(['Trong'], $names);
     }
 }

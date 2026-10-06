@@ -9,7 +9,14 @@ class CompareController extends Controller
 {
     public function index(Request $request)
     {
-        $ids = $request->input('products', []);
+        // Chỉ nhận ID số nguyên, tối đa 4 sản phẩm (giống giới hạn khi thêm bằng POST)
+        $ids = collect((array) $request->input('products', []))
+            ->filter(fn ($id) => is_scalar($id) && ctype_digit((string) $id))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->take(4)
+            ->values()
+            ->all();
 
         if (empty($ids)) {
             $ids = session('compare_products', []);
@@ -18,7 +25,7 @@ class CompareController extends Controller
         }
 
         $products = Product::whereIn('id', $ids)
-            ->with(['category', 'images', 'reviews'])
+            ->with('category')->withCardData()
             ->get();
 
         return view('pages.compare', compact('products'));

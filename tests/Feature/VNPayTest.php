@@ -207,7 +207,7 @@ class VNPayTest extends TestCase
         // Không gửi vnp_BankCode → VNPay hiện màn hình chọn ngân hàng
         $this->assertStringNotContainsString('vnp_BankCode=', $url);
     }
-    
+
     public function test_return_url_with_failed_response_code_shows_error(): void
     {
         [$payment, $order] = $this->makePaidFlowPayment(300000);
@@ -223,9 +223,10 @@ class VNPayTest extends TestCase
 
         $response->assertOk()->assertSee('Giao dịch không thành công hoặc đã bị hủy');
         $this->assertSame('failed', $payment->fresh()->status);
-        $this->assertSame('pending', $order->fresh()->payment_status);
+        $this->assertSame('failed', $order->fresh()->payment_status);
+        $this->assertSame('cancelled', $order->fresh()->status);
     }
-    
+
     public function test_ipn_endpoint_returns_json_result(): void
     {
         [$payment, $order] = $this->makePaidFlowPayment(200000);
@@ -238,13 +239,13 @@ class VNPayTest extends TestCase
 
         // Using the controller endpoint directly
         $response = $this->getJson(route('payment.vnpay.ipn', $data));
-        
+
         $response->assertOk()
-                 ->assertJson([
-                     'RspCode' => '00',
-                     'Message' => 'Confirm Success'
-                 ]);
-                 
+            ->assertJson([
+                'RspCode' => '00',
+                'Message' => 'Confirm Success',
+            ]);
+
         $this->assertSame('paid', $payment->fresh()->status);
         $this->assertSame('paid', $order->fresh()->payment_status);
     }

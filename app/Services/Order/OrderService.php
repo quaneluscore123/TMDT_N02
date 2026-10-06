@@ -5,7 +5,11 @@ namespace App\Services\Order;
 use App\Exceptions\CouponException;
 use App\Exceptions\OrderException;
 use App\Mail\OrderConfirmedMail;
+use App\Mail\OrderStatusChangedMail;
+use App\Models\Cart;
+use App\Models\CouponUsage;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -36,6 +40,10 @@ class OrderService extends BaseService
     public function placeOrder(User $user, array $data): Order
     {
         return DB::transaction(function () use ($user, $data) {
+            // 0. Khóa giỏ hàng của user: request thứ 2 (double-click) phải chờ request đầu commit,
+            //    lúc đó giỏ đã trống → không tạo đơn trùng
+            Cart::where('user_id', $user->id)->lockForUpdate()->first();
+
             // 1. Lấy giỏ hàng đầy đủ
             $cart = $this->cartService->getCartWithItems($user->id);
 
@@ -207,5 +215,116 @@ class OrderService extends BaseService
         $order->update(['status' => $status]);
 
         return $order;
+    }
+
+    /**
+     * Hủy đơn: hoàn kho, hoàn lượt coupon, hủy referral, ghi audit.
+     * Khóa dòng order để không bao giờ hoàn kho 2 lần (admin + IPN + job hết hạn chạy song song).
+     *
+     * @return bool false nếu đơn đã bị hủy trước đó (không làm gì).
+     */
+    public function cancelOrder(Order $order, string $reason, array $extra = []): bool
+    {
+        $cancelled = DB::transaction(function () use ($order, $reason, $extra) {
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if (! $locked || $locked->status === 'cancelled') {
+                return false;
+            }
+
+            $oldStatus = $locked->status;
+            $locked->update(array_merge(['status' => 'cancelled'], $extra));
+
+            foreach ($locked->items as $item) {
+                if ($item->variant_id) {
+                    ProductVariant::where('id', $item->variant_id)
+                        ->increment('stock', $item->quantity);
+                }
+
+                Product::where('id', $item->product_id)
+                    ->increment('stock', $item->quantity);
+            }
+
+            $usage = CouponUsage::where('order_id', $locked->id)->first();
+            if ($usage) {
+                $usage->coupon?->decrement('used_count');
+                $usage->delete();
+            }
+
+            $this->referralService->cancelReferral($locked);
+
+            AuditService::log('order_status_changed', 'Order', $locked->id, [
+                'from' => $oldStatus,
+                'to' => 'cancelled',
+                'reason' => $reason,
+            ]);
+
+            return $oldStatus;
+        });
+
+        if ($cancelled === false) {
+            return false;
+        }
+
+        $order->refresh();
+        $this->notifyStatusChanged($order, $cancelled);
+
+        return true;
+    }
+
+    /**
+     * Khách tự hủy đơn: chỉ khi đơn còn "Chờ xử lý" và chưa thanh toán online.
+     *
+     * @throws OrderException
+     */
+    public function cancelByCustomer(Order $order): void
+    {
+        if (! $this->customerCanCancel($order)) {
+            throw new OrderException('Đơn hàng này không thể hủy (đã được xác nhận hoặc đã thanh toán).');
+        }
+
+        $this->cancelOrder($order, 'customer');
+    }
+
+    public function customerCanCancel(Order $order): bool
+    {
+        return $order->status === 'pending' && $order->payment_status !== 'paid';
+    }
+
+    /**
+     * Hủy các đơn VNPay quá hạn chưa thanh toán để nhả tồn kho.
+     *
+     * @return int số đơn đã hủy
+     */
+    public function expireUnpaidOnlineOrders(int $minutes): int
+    {
+        $count = 0;
+
+        Order::query()
+            ->where('payment_method', 'vnpay')
+            ->where('payment_status', 'pending')
+            ->where('status', 'pending')
+            ->where('created_at', '<', now()->subMinutes($minutes))
+            ->orderBy('id')
+            ->each(function (Order $order) use (&$count) {
+                Payment::where('order_id', $order->id)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'failed']);
+
+                if ($this->cancelOrder($order, 'payment_expired', ['payment_status' => 'failed'])) {
+                    $count++;
+                }
+            });
+
+        return $count;
+    }
+
+    public function notifyStatusChanged(Order $order, string $oldStatus): void
+    {
+        try {
+            Mail::to($order->user->email)->queue(new OrderStatusChangedMail($order, $oldStatus));
+        } catch (\Exception $e) {
+            \Log::error('Không thể gửi email cập nhật đơn hàng: '.$e->getMessage());
+        }
     }
 }

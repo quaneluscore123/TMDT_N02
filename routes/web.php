@@ -27,10 +27,25 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StaticPageController;
 use App\Http\Controllers\WishlistController;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 
 // Home
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// API docs (Scribe) — postman/openapi sinh bởi `php artisan scribe:generate --no-extraction`
+Route::view('/docs', 'scribe.index')->name('scribe');
+Route::get('/docs.postman', function () {
+    abort_unless(Storage::disk('local')->exists('scribe/collection.json'), 404);
+
+    return new JsonResponse(Storage::disk('local')->get('scribe/collection.json'), json: true);
+})->name('scribe.postman');
+Route::get('/docs.openapi', function () {
+    abort_unless(Storage::disk('local')->exists('scribe/openapi.yaml'), 404);
+
+    return response()->file(Storage::disk('local')->path('scribe/openapi.yaml'));
+})->name('scribe.openapi');
 
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
@@ -93,7 +108,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout.index');
     Route::post('/checkout/review', [OrderController::class, 'review'])->name('checkout.review');
     Route::get('/checkout/review', [OrderController::class, 'showReview'])->name('checkout.review.show');
-    Route::post('/checkout/confirm', [OrderController::class, 'confirm'])->name('checkout.confirm');
+    Route::post('/checkout/confirm', [OrderController::class, 'confirm'])->middleware('throttle:checkout')->name('checkout.confirm');
 
     // Coupon
     Route::post('/checkout/apply-coupon', [CouponController::class, 'apply'])->name('checkout.apply-coupon');
@@ -103,6 +118,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('/orders/{order}/success', [OrderController::class, 'success'])->name('orders.success');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->middleware('throttle:10,1')->name('orders.cancel');
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
@@ -114,7 +130,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/wishlist/{product:id}/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 
     // Reviews
-    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::post('/products/{product}/reviews', [ReviewController::class, 'store'])->middleware('throttle:reviews')->name('reviews.store');
 });
 
 // Admin Routes

@@ -10,14 +10,14 @@ class HomeController extends Controller
     public function index()
     {
         // Nổi bật: SP đang giảm giá trước, sau đó theo giá cao (khác với "mới nhất")
-        $featuredProducts = Product::with('category')
+        $featuredProducts = Product::with('category')->withCardData()
             ->where('status', 'active')
             ->orderByRaw('CASE WHEN sale_price IS NOT NULL AND sale_price < price THEN 0 ELSE 1 END')
             ->orderByDesc('price')
             ->limit(8)
             ->get();
 
-        $newProducts = Product::with('category')
+        $newProducts = Product::with('category')->withCardData()
             ->where('status', 'active')
             ->latest()
             ->limit(8)

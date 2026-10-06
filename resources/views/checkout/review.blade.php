@@ -11,7 +11,8 @@
             </div>
         @endif
 
-        <form action="{{ route('checkout.confirm') }}" method="POST">
+        <form action="{{ route('checkout.confirm') }}" method="POST"
+              x-data="{ submitting: false }" @submit="if (submitting) { $event.preventDefault() } submitting = true">
             @csrf
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -132,9 +133,9 @@
                             </div>
                         </div>
 
-                        <button type="submit"
-                                class="w-full bg-[#b8847e] text-white py-3 rounded-lg font-semibold hover:bg-[#a6736d] transition mt-6">
-                            Đặt hàng
+                        <button type="submit" :disabled="submitting"
+                                class="w-full bg-[#b8847e] text-white py-3 rounded-lg font-semibold hover:bg-[#a6736d] transition mt-6 disabled:opacity-60 disabled:cursor-wait">
+                            <span x-text="submitting ? 'Đang xử lý...' : 'Đặt hàng'">Đặt hàng</span>
                         </button>
 
                         <a href="{{ route('checkout.index') }}"

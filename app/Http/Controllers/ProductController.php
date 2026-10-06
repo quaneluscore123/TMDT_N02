@@ -11,7 +11,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('category')->where('status', 'active');
+        $query = Product::with('category')->withCardData()->where('status', 'active');
 
         $search = $request->input('search') ?: $request->input('q');
 
@@ -86,7 +86,7 @@ class ProductController extends Controller
 
         $categoryIds = $this->categoryIdsWithDescendants($category);
 
-        $query = Product::with('category')
+        $query = Product::with('category')->withCardData()
             ->where('status', 'active')
             ->whereIn('category_id', $categoryIds);
 
@@ -137,7 +137,7 @@ class ProductController extends Controller
             'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order'),
             'variants' => fn ($q) => $q->orderBy('size')->orderBy('color'),
         ]);
-        $relatedProducts = Product::with('category')
+        $relatedProducts = Product::with('category')->withCardData()
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
             ->where('status', 'active')

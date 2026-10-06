@@ -88,6 +88,18 @@
                             </span>
                         </div>
                         <div class="flex justify-between">
+                            <span class="text-gray-600">Trạng thái thanh toán:</span>
+                            @if($order->payment_status === 'paid')
+                                <span class="font-medium text-green-600">Đã thanh toán</span>
+                            @elseif($order->payment_status === 'failed')
+                                <span class="font-medium text-red-600">Thanh toán thất bại</span>
+                            @elseif($order->payment_method === 'cod')
+                                <span class="font-medium text-gray-700">Thanh toán khi nhận hàng</span>
+                            @else
+                                <span class="font-medium text-yellow-700">Chưa thanh toán</span>
+                            @endif
+                        </div>
+                        <div class="flex justify-between">
                             <span class="text-gray-600">Tạm tính:</span>
                             <span>{{ number_format($order->subtotal, 0, ',', '.') }} ₫</span>
                         </div>
@@ -107,6 +119,17 @@
                         </div>
                     </div>
                 </div>
+
+                @if($order->status === 'pending' && $order->payment_status !== 'paid')
+                    <form method="POST" action="{{ route('orders.cancel', $order->id) }}"
+                          onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn hàng này?')">
+                        @csrf
+                        <button type="submit"
+                                class="w-full px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 transition">
+                            Hủy đơn hàng
+                        </button>
+                    </form>
+                @endif
 
                 {{-- Shipping --}}
                 <div class="bg-white rounded-lg shadow p-6">
