@@ -130,6 +130,41 @@ class DatabaseSeeder extends Seeder
             }
         }
 
+        // Danh mục con (cấp 2) — để demo danh mục nhiều cấp; chuyển sản phẩm tương ứng vào danh mục con
+        $subCategories = [
+            'dien-thoai' => [
+                ['iPhone', 'dien-thoai-iphone', ['iphone-15-pro-max', 'iphone-15']],
+                ['Điện thoại Android', 'dien-thoai-android', ['samsung-galaxy-s24-ultra', 'xiaomi-14', 'samsung-galaxy-a55', 'oppo-reno11-f', 'xiaomi-redmi-note-13']],
+            ],
+            'laptop' => [
+                ['MacBook', 'laptop-macbook', ['macbook-air-m3']],
+                ['Laptop Windows', 'laptop-windows', ['dell-xps-15', 'asus-rog-zephyrus-g14', 'hp-spectre-x360', 'lenovo-thinkpad-x1-carbon', 'acer-swift-7', 'msi-prestige-16-ai']],
+            ],
+            'thoi-trang' => [
+                ['Thời trang nam', 'thoi-trang-nam', ['ao-polo-nam', 'quan-short-nam', 'ao-khoac-jacket-nam']],
+                ['Thời trang nữ', 'thoi-trang-nu', ['quan-jean-nu', 'ao-so-mi-nu', 'dam-da-hoi']],
+            ],
+        ];
+
+        foreach ($subCategories as $parentSlug => $children) {
+            $parent = Category::where('slug', $parentSlug)->first();
+            if (! $parent) {
+                continue;
+            }
+
+            foreach ($children as $i => [$name, $slug, $productSlugs]) {
+                $child = Category::create([
+                    'name' => $name,
+                    'slug' => $slug,
+                    'parent_id' => $parent->id,
+                    'sort_order' => $i + 1,
+                    'status' => 'active',
+                ]);
+
+                Product::whereIn('slug', $productSlugs)->update(['category_id' => $child->id]);
+            }
+        }
+
         // Coupons
         $this->call(CouponSeeder::class);
 

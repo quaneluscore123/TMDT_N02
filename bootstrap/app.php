@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\IsAdmin;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrackReferral;
@@ -16,12 +17,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Chỉ tin X-Forwarded-* từ proxy khai báo trong TRUSTED_PROXIES (vd ngrok: 127.0.0.1).
+        // Tin '*' cho phép giả IP để vượt rate limit đăng nhập.
+        $trustedProxies = array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))));
+        if ($trustedProxies) {
+            $middleware->trustProxies(at: $trustedProxies);
+        }
         $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'admin' => IsAdmin::class,
         ]);
         $middleware->web(append: [
+            EnsureUserIsActive::class,
             TrackReferral::class,
         ]);
     })

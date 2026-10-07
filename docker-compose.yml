@@ -32,6 +32,7 @@ services:
       VNPAY_URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
       VNPAY_RETURN_URL: ${APP_URL:-http://localhost:8081}/payment/vnpay/return
       GOOGLE_REDIRECT_URI: ${APP_URL:-http://localhost:8081}/auth/google/callback
+      FACEBOOK_REDIRECT_URI: ${APP_URL:-http://localhost:8081}/auth/facebook/callback
     depends_on:
       mysql:
         condition: service_healthy

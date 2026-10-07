@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Exceptions\SocialLoginException;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\BaseService;
@@ -117,27 +118,50 @@ class AuthService extends BaseService
 
     /**
      * Xử lý Google OAuth callback.
-     * Tạo hoặc cập nhật user từ dữ liệu Google.
      */
     public function handleGoogleCallback(): User
     {
-        $googleUser = Socialite::driver('google')->user();
+        return $this->handleSocialCallback('google');
+    }
+
+    /**
+     * Xử lý callback OAuth của mạng xã hội (google | facebook).
+     * Tạo mới hoặc liên kết user theo email.
+     *
+     * @throws SocialLoginException Khi tài khoản mạng xã hội không cung cấp email.
+     */
+    public function handleSocialCallback(string $provider): User
+    {
+        $socialUser = Socialite::driver($provider)->user();
+
+        if (! $socialUser->getEmail()) {
+            // Facebook cho phép người dùng từ chối cấp quyền email
+            throw new SocialLoginException(
+                'Tài khoản '.ucfirst($provider).' chưa cung cấp email. Vui lòng cho phép chia sẻ email hoặc đăng ký bằng email.'
+            );
+        }
 
         // Calculate referral code before updateOrCreate because Eloquent doesn't evaluate Closures here
-        $existingUser = User::where('email', $googleUser->getEmail())->first();
+        $existingUser = User::where('email', $socialUser->getEmail())->first();
         $referralCode = $existingUser ? $existingUser->referral_code : $this->generateUniqueReferralCode();
 
         $user = User::updateOrCreate(
-            ['email' => $googleUser->getEmail()],
+            ['email' => $socialUser->getEmail()],
             [
-                'provider_id' => $googleUser->getId(),
-                'provider' => 'google',
-                'name' => $googleUser->getName(),
-                'avatar' => $googleUser->getAvatar(),
+                'provider_id' => $socialUser->getId(),
+                'provider' => $provider,
+                'name' => $socialUser->getName() ?: $socialUser->getEmail(),
+                'avatar' => $socialUser->getAvatar(),
                 'email_verified_at' => now(),
                 'referral_code' => $referralCode,
             ]
         );
+
+        // User vừa tạo: nạp lại giá trị mặc định của DB (is_active = true...),
+        // nếu không is_active = null và user mới bị coi là "bị khóa"
+        if ($user->wasRecentlyCreated) {
+            $user->refresh();
+        }
 
         // Đảm bảo referral_code không bị null (user cũ chưa có)
         if (! $user->referral_code) {

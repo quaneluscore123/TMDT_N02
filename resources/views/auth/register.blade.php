@@ -60,6 +60,17 @@
                         <span class="font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Đăng ký với Google</span>
                     </a>
 
+                    @if(config('services.facebook.client_id'))
+                        {{-- Facebook Login (chỉ hiện khi đã cấu hình FACEBOOK_CLIENT_ID) --}}
+                        <a href="{{ route('auth.facebook') }}"
+                           class="mt-3 w-full flex items-center justify-center gap-3 bg-[#1877F2] border-2 border-[#1877F2] rounded-xl px-4 py-3 hover:bg-[#166fe5] transition-all">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                                <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.5c-1.5 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.5h-2.8V24C19.62 23.1 24 18.1 24 12.07z"/>
+                            </svg>
+                            <span class="font-semibold text-white">Đăng ký với Facebook</span>
+                        </a>
+                    @endif
+
                     {{-- Divider --}}
                     <div class="divider-line my-6">
                         <span class="text-xs text-gray-400 bg-white px-2">hoặc đăng ký bằng email</span>

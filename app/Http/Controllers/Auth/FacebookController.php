@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
-class GoogleController extends SocialLoginController
+class FacebookController extends SocialLoginController
 {
     protected function provider(): string
     {
-        return 'google';
+        return 'facebook';
     }
 
     protected function label(): string
     {
-        return 'Google';
+        return 'Facebook';
     }
 }

@@ -74,4 +74,22 @@ class GoogleControllerTest extends TestCase
 
         $response->assertRedirect(route('login'));
     }
+
+    public function test_first_time_google_user_is_created_and_logged_in()
+    {
+        $abstractUser = \Mockery::mock(\Laravel\Socialite\Two\User::class);
+        $abstractUser->shouldReceive('getId')->andReturn('g-new');
+        $abstractUser->shouldReceive('getName')->andReturn('New User');
+        $abstractUser->shouldReceive('getEmail')->andReturn('new@example.com');
+        $abstractUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $provider = \Mockery::mock(GoogleProvider::class);
+        $provider->shouldReceive('user')->andReturn($abstractUser);
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        // Trước đây user mới bị báo "tài khoản bị khóa" vì is_active chưa được nạp từ DB
+        $this->get('/auth/google/callback')->assertRedirect(route('home'));
+
+        $this->assertAuthenticatedAs(User::where('email', 'new@example.com')->firstOrFail());
+    }
 }
