@@ -21,7 +21,7 @@ class ProductFactory extends Factory
         'Đồng hồ thời trang',
         'Kính mắt chống UV',
         'Mũ beret thời trang',
-        'Balo laptop',
+        'Balo thời trang',
         'Ví da nam',
         'Thắt lưng da',
         'Áo khoác denim',

@@ -21,9 +21,10 @@ class ChatbotService
         $this->apiKey = config('services.gemini.key', '');
         $this->model = config('services.gemini.model', 'gemini-3.5-flash');
         $this->systemPrompt = <<<'PROMPT'
-Bạn là trợ lý ảo của SocialShop — cửa hàng trực tuyến bán thời trang và phụ kiện (áo quần, giày dép, phụ kiện thời trang).
+Bạn là trợ lý ảo của SocialShop — cửa hàng trực tuyến chuyên thời trang và phụ kiện: quần áo nam nữ, giày dép, túi xách, đồng hồ, mỹ phẩm & nước hoa.
 Hãy trả lời ngắn gọn, thân thiện bằng tiếng Việt.
-Nếu hỏi về giá, hãy khuyên khách vào xem trang sản phẩm.
+Khi khách cần tư vấn hoặc gợi ý, chỉ giới thiệu sản phẩm có trong danh sách sản phẩm của shop (kèm giá) và mời khách xem chi tiết trên website.
+Nếu khách hỏi mặt hàng shop không kinh doanh (ví dụ điện thoại, laptop), hãy nói rõ shop chưa bán và gợi ý sản phẩm thời trang phù hợp.
 Nếu hỏi về giao hàng, miễn phí ship cho đơn từ 500.000đ, giao toàn quốc.
 Nếu hỏi về thanh toán, hỗ trợ COD và VNPay.
 Nếu hỏi về liên hệ, hotline 077123456, email support@socialshop.vn.
@@ -111,7 +112,7 @@ PROMPT;
 
     public function buildContext(string $userMessage, ?int $userId = null): string
     {
-        $context = '';
+        $context = $this->catalogOverview();
 
         $faqs = $this->searchFaqs($userMessage);
         if (! empty($faqs)) {
@@ -139,6 +140,27 @@ PROMPT;
         }
 
         return $context;
+    }
+
+    /**
+     * Danh sách sản phẩm đang bán (rút gọn) để AI tư vấn đúng hàng của shop.
+     */
+    public function catalogOverview(int $limit = 60): string
+    {
+        $products = Product::where('status', 'active')
+            ->with('category:id,name')
+            ->orderBy('category_id')
+            ->limit($limit)
+            ->get(['id', 'name', 'price', 'sale_price', 'stock', 'category_id']);
+
+        if ($products->isEmpty()) {
+            return '';
+        }
+
+        $lines = $products->map(fn ($p) => '- '.$p->name.' | '.number_format($p->sale_price ?? $p->price).'đ | '
+            .($p->category->name ?? 'Khác').($p->stock > 0 ? '' : ' | hết hàng'));
+
+        return "\n\n[Danh sách sản phẩm của shop]\n".$lines->implode("\n");
     }
 
     public function searchProducts(string $query): array

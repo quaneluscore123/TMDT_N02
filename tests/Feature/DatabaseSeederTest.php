@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
+use App\Services\ChatbotService;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,10 +28,20 @@ class DatabaseSeederTest extends TestCase
         $this->assertTrue(Review::where('status', 'pending')->exists());
 
         // Danh mục nhiều cấp: có danh mục con và sản phẩm nằm trong danh mục con
-        $child = Category::where('slug', 'dien-thoai-iphone')->firstOrFail();
-        $this->assertSame('dien-thoai', $child->parent->slug);
+        $child = Category::where('slug', 'giay-sneaker')->firstOrFail();
+        $this->assertSame('giay-dep', $child->parent->slug);
         $this->assertTrue(Product::where('category_id', $child->id)->exists());
-        $this->get(route('categories.show', 'dien-thoai'))->assertOk()->assertSee('iPhone 15 Pro Max');
+        $this->get(route('categories.show', 'giay-dep'))->assertOk()->assertSee('Nike Air Max 90');
+
+        // Shop chuyên thời trang: không còn sản phẩm điện tử, mọi sản phẩm đều có ảnh
+        $this->assertFalse(Category::whereIn('slug', ['dien-thoai', 'laptop'])->exists());
+        $this->assertFalse(Product::where('name', 'like', '%iPhone%')->exists());
+        $this->assertSame(0, Product::doesntHave('images')->count());
+
+        // Chatbot AI được cung cấp danh sách sản phẩm thật của shop để tư vấn
+        $context = app(ChatbotService::class)->buildContext('gợi ý quà tặng');
+        $this->assertStringContainsString('Đầm Dạ Hội', $context);
+        $this->assertStringNotContainsString('iPhone', $context);
 
         $admin = User::where('email', 'admin@socialshop.vn')->firstOrFail();
         $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();

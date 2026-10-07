@@ -54,7 +54,7 @@ class ChatbotFaqSeeder extends Seeder
             ],
             [
                 'question' => 'Giá cả sản phẩm như thế nào?',
-                'answer' => 'Bạn có thể xem giá chi tiết từng sản phẩm tại trang Sản phẩm trên website. Shop có nhiều sản phẩm từ 150.000đ đến 37.000.000đ.',
+                'answer' => 'Bạn có thể xem giá chi tiết từng sản phẩm tại trang Sản phẩm trên website. Shop có thời trang nam nữ, giày dép, túi xách, đồng hồ và mỹ phẩm với giá từ 150.000đ đến khoảng 16.000.000đ.',
                 'keywords' => 'giá,giá cả,bao nhiêu,price,cost,tiền,có giá',
                 'status' => 'active',
                 'sort_order' => 7,

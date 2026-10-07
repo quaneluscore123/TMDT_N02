@@ -59,7 +59,7 @@ php artisan schedule:work        # (terminal khác) hủy đơn VNPay quá hạn
 | Quản trị | admin@socialshop.vn | password |
 | Khách hàng | user@socialshop.vn | password |
 
-Seeder tạo sẵn 8 danh mục, ~50 sản phẩm, mã giảm giá, FAQ chatbot, ~20 đơn hàng nhiều trạng thái trong 14 ngày gần nhất và đánh giá (đã duyệt / chờ duyệt) để dashboard và màn kiểm duyệt có dữ liệu.
+Seeder tạo sẵn danh mục thời trang 2 cấp (Thời trang nam/nữ, Giày dép, Túi xách, Đồng hồ, Mỹ phẩm), 30 sản phẩm có ảnh, mã giảm giá, FAQ chatbot, ~20 đơn hàng nhiều trạng thái trong 14 ngày gần nhất và đánh giá (đã duyệt / chờ duyệt) để dashboard và màn kiểm duyệt có dữ liệu.
 
 **Thẻ test VNPay sandbox:** ngân hàng NCB — số thẻ `9704198526191432198`, tên `NGUYEN VAN A`, ngày phát hành `07/15`, OTP `123456`.
 

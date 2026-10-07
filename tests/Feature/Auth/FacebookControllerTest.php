@@ -25,13 +25,13 @@ class FacebookControllerTest extends TestCase
         ]);
     }
 
-    private function fakeFacebookUser(?string $email): void
+    private function fakeFacebookUser(?string $email, string $avatar = 'http://avatar.test/b.jpg'): void
     {
         $socialUser = Mockery::mock(SocialiteUser::class);
         $socialUser->shouldReceive('getId')->andReturn('fb-123');
         $socialUser->shouldReceive('getName')->andReturn('Nguyễn Văn B');
         $socialUser->shouldReceive('getEmail')->andReturn($email);
-        $socialUser->shouldReceive('getAvatar')->andReturn('http://avatar.test/b.jpg');
+        $socialUser->shouldReceive('getAvatar')->andReturn($avatar);
 
         $provider = Mockery::mock(FacebookProvider::class);
         $provider->shouldReceive('user')->andReturn($socialUser);
@@ -56,6 +56,17 @@ class FacebookControllerTest extends TestCase
         $this->assertSame('facebook', $user->provider);
         $this->assertNotNull($user->referral_code);
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_callback_accepts_long_avatar_url(): void
+    {
+        // URL ảnh từ CDN Facebook thường dài hơn 255 ký tự
+        $avatar = 'https://scontent.fbcdn.net/v/t1/photo.jpg?'.str_repeat('a', 400);
+        $this->fakeFacebookUser('b@example.com', $avatar);
+
+        $this->get(route('auth.facebook.callback'))->assertRedirect(route('home'));
+
+        $this->assertSame($avatar, User::where('email', 'b@example.com')->value('avatar'));
     }
 
     public function test_callback_without_email_asks_user_to_share_email(): void
