@@ -21,7 +21,7 @@
                     <li><strong class="text-[#3d3d3d]">Điện thoại:</strong> 077123456</li>
                     <li><strong class="text-[#3d3d3d]">Email:</strong> support@socialshop.vn</li>
                     <li><strong class="text-[#3d3d3d]">Tên miền website:</strong> {{ config('app.url') }}</li>
-                    <li><strong class="text-[#3d3d3d]">Mã số thuế / số ĐKKD:</strong> Hộ kinh doanh cá thể — thông tin MST sẽ được bổ sung khi có.</li>
+                    <li><strong class="text-[#3d3d3d]">Mã số thuế / số ĐKKD:</strong> 0109876543 (thông tin giả định — website là sản phẩm của dự án học tập, chưa đăng ký kinh doanh thực tế).</li>
                 </ul>
             </section>
 

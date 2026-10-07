@@ -394,7 +394,7 @@
                             {{-- Avatar --}}
                             <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#f5f0ec] to-[#e8c4c4] flex items-center justify-center flex-shrink-0">
                                 @if($review->user->avatar)
-                                    <img src="{{ asset('storage/' . $review->user->avatar) }}" alt="{{ $review->user->name }}" class="w-full h-full rounded-full object-cover">
+                                    <img src="{{ str_starts_with($review->user->avatar, 'http') ? $review->user->avatar : asset('storage/' . $review->user->avatar) }}" alt="{{ $review->user->name }}" class="w-full h-full rounded-full object-cover">
                                 @else
                                     <span class="text-sm font-semibold text-[#b8847e]">{{ mb_substr($review->user->name, 0, 1) }}</span>
                                 @endif

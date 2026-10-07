@@ -14,11 +14,16 @@ class ChatController extends Controller
     public function stream(Request $request, ChatbotService $chatbot)
     {
         $message = $request->input('message', '');
-        $history = $request->input('history', []);
 
-        if (empty(trim($message))) {
+        if (! is_string($message) || trim($message) === '') {
             return response()->json(['error' => 'Message is required'], 400);
         }
+
+        if (mb_strlen($message) > 1000) {
+            return response()->json(['error' => 'Tin nhắn tối đa 1000 ký tự.'], 422);
+        }
+
+        $history = $this->sanitizeHistory($request->input('history', []));
 
         // Guest: chỉ FAQ/fallback — không gọi Gemini, không lộ dữ liệu đơn hàng
         if (! Auth::check()) {
@@ -29,7 +34,6 @@ class ChatController extends Controller
         }
 
         $userId = Auth::id();
-        $history = array_slice(is_array($history) ? $history : [], -20);
         $contextParts = $chatbot->buildContext($message, $userId);
 
         $apiKey = $chatbot->getApiKey();
@@ -128,7 +132,7 @@ class ChatController extends Controller
                 $response->getBody()->close();
             });
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Chat streaming error', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -139,6 +143,36 @@ class ChatController extends Controller
                 $this->sendSseEvent(['text' => $text, 'done' => true]);
             });
         }
+    }
+
+    /**
+     * Chỉ giữ 20 lượt gần nhất, đúng cấu trúc {type: user|bot, content: string ≤ 2000 ký tự};
+     * phần tử sai định dạng bị bỏ qua thay vì làm lỗi 500.
+     *
+     * @return array<int, array{type: string, content: string}>
+     */
+    private function sanitizeHistory(mixed $history): array
+    {
+        if (! is_array($history)) {
+            return [];
+        }
+
+        $clean = [];
+
+        foreach ($history as $msg) {
+            if (! is_array($msg)
+                || ! in_array($msg['type'] ?? null, ['user', 'bot'], true)
+                || ! is_string($msg['content'] ?? null)) {
+                continue;
+            }
+
+            $clean[] = [
+                'type' => $msg['type'],
+                'content' => mb_substr($msg['content'], 0, 2000),
+            ];
+        }
+
+        return array_slice($clean, -20);
     }
 
     private function sendSseResponse(callable $callback): StreamedResponse

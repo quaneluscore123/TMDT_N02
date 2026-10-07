@@ -4,13 +4,13 @@ Website thương mại điện tử tích hợp mạng xã hội (Laravel 12, Li
 
 ## Chức năng chính
 
-**Khách hàng:** đăng ký / đăng nhập (email + Google), tìm kiếm – lọc – sắp xếp sản phẩm, biến thể size/màu, giỏ hàng, checkout 2 bước (nhập thông tin → xem lại & đồng ý điều kiện), mã giảm giá, thanh toán COD / VNPay (sandbox), theo dõi & tự hủy đơn khi còn "Chờ xử lý", đánh giá kèm ảnh (sau khi nhận hàng), wishlist, so sánh tối đa 4 sản phẩm.
+**Khách hàng:** đăng ký / đăng nhập (email, Google, Facebook), tìm kiếm – lọc – sắp xếp sản phẩm, biến thể size/màu, giỏ hàng, checkout 2 bước (nhập thông tin → xem lại & đồng ý điều kiện), mã giảm giá, thanh toán COD / VNPay (sandbox), theo dõi & tự hủy đơn khi còn "Chờ xử lý", đánh giá kèm ảnh (sau khi nhận hàng), wishlist, so sánh tối đa 4 sản phẩm.
 
 **Social & nâng cao:** chia sẻ Facebook / Messenger / Zalo, chương trình giới thiệu (referral), chatbot AI Gemini (stream SSE, FAQ fallback cho khách), SEO (JSON-LD, sitemap.xml), email xác nhận / cập nhật đơn qua queue.
 
 **Quản trị (`/admin`):** dashboard doanh thu 7 ngày, top xem / bán chạy; CRUD sản phẩm – ảnh – biến thể, danh mục, mã giảm giá, FAQ chatbot; quản lý đơn (chặn xác nhận/giao đơn VNPay chưa thanh toán), người dùng, kiểm duyệt đánh giá, nhật ký audit.
 
-**Bảo mật:** VNPay xác thực HMAC-SHA512 + IPN idempotent, trừ kho trong transaction có `lockForUpdate`, đơn VNPay thất bại / quá hạn tự hủy và hoàn kho, RBAC admin, chống IDOR đơn hàng, CSRF + security headers, rate limit (đăng nhập theo email+IP và theo IP, đăng ký, quên mật khẩu, checkout, đánh giá, chatbot).
+**Bảo mật:** VNPay xác thực HMAC-SHA512 + IPN idempotent, trừ kho trong transaction có `lockForUpdate`, đơn VNPay thất bại / quá hạn tự hủy và hoàn kho, RBAC admin, chống IDOR đơn hàng, CSRF + security headers, tài khoản bị khóa bị đăng xuất ngay, chỉ tin proxy khai báo trong `TRUSTED_PROXIES`, rate limit (đăng nhập theo email+IP và theo IP, đăng ký, quên mật khẩu, checkout, đánh giá, chatbot).
 
 ## Chạy bằng Docker (khuyến nghị)
 
@@ -59,9 +59,33 @@ php artisan schedule:work        # (terminal khác) hủy đơn VNPay quá hạn
 | Quản trị | admin@socialshop.vn | password |
 | Khách hàng | user@socialshop.vn | password |
 
-Seeder tạo sẵn 8 danh mục, ~50 sản phẩm, mã giảm giá, FAQ chatbot, ~20 đơn hàng nhiều trạng thái trong 14 ngày gần nhất và đánh giá (đã duyệt / chờ duyệt) để dashboard và màn kiểm duyệt có dữ liệu.
+Seeder tạo sẵn danh mục thời trang 2 cấp (Thời trang nam/nữ, Giày dép, Túi xách, Đồng hồ, Mỹ phẩm), 30 sản phẩm có ảnh, mã giảm giá, FAQ chatbot, ~20 đơn hàng nhiều trạng thái trong 14 ngày gần nhất và đánh giá (đã duyệt / chờ duyệt) để dashboard và màn kiểm duyệt có dữ liệu.
 
 **Thẻ test VNPay sandbox:** ngân hàng NCB — số thẻ `9704198526191432198`, tên `NGUYEN VAN A`, ngày phát hành `07/15`, OTP `123456`.
+
+## Sao lưu và phục hồi cơ sở dữ liệu
+
+```bash
+# Sao lưu (tự chạy 02:00 hằng ngày bởi scheduler) → storage/app/backups/database_YYYY-MM-DD_His.sql
+docker compose exec app php artisan db:backup
+
+# Phục hồi từ một bản sao lưu
+docker compose exec -T mysql mysql -usocial -psocial_secret social_commerce < storage/app/backups/<ten-file>.sql
+```
+
+Không dùng Docker: `php artisan db:backup` cần `mysqldump` (đặt đường dẫn qua `MYSQLDUMP_PATH` trong `.env` nếu không có trong PATH); phục hồi bằng `mysql -u<user> -p <database> < file.sql`.
+
+## Đăng nhập mạng xã hội
+
+- **Google:** điền `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (Google Cloud Console → OAuth client, redirect `APP_URL/auth/google/callback`).
+- **Facebook:** điền `FACEBOOK_CLIENT_ID`, `FACEBOOK_CLIENT_SECRET` (Meta for Developers → Facebook Login, redirect `APP_URL/auth/facebook/callback`). Nút Facebook chỉ hiện khi đã cấu hình. Nếu người dùng từ chối cấp quyền email, hệ thống báo lỗi và yêu cầu đăng ký bằng email.
+
+## Triển khai production (HTTPS)
+
+- Đặt `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://...`, `SESSION_SECURE_COOKIE=true` (cookie phiên chỉ gửi qua HTTPS; mặc định đã có `HttpOnly` và `SameSite=lax`).
+- Cấu hình chứng chỉ SSL ở web server và chuyển hướng toàn bộ HTTP → HTTPS.
+- Nếu chạy sau reverse proxy / tunnel (ngrok, cloudflared, load balancer), khai báo IP proxy trong `TRUSTED_PROXIES` (ví dụ `127.0.0.1`) để Laravel nhận đúng IP khách và HTTPS. Không đặt `*`: kẻ tấn công sẽ giả được IP để vượt giới hạn đăng nhập.
+- Thay `VNPAY_TMN_CODE` / `VNPAY_HASH_SECRET` bằng thông tin production và cập nhật dòng `Sitemap:` trong `public/robots.txt`.
 
 ## Kiểm thử
 

@@ -40,7 +40,8 @@
     {{-- JSON-LD Structured Data --}}
     @isset($jsonLd)
         <script type="application/ld+json">
-            {!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+            {{-- JSON_HEX_TAG: mã hóa < > để dữ liệu sản phẩm không thể đóng thẻ </script> (chống XSS) --}}
+            {!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP) !!}
         </script>
     @endisset
     <link rel="preconnect" href="https://fonts.googleapis.com">
